@@ -1,10 +1,10 @@
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.DecimalFormat" %>
 <%@ page import="java.math.BigDecimal" %>
-<%@ page import="java.sql.*" %>
-<%@ page import="org.joda.time.LocalDate" %>
+<%@ page import="java.time.LocalDate" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.dao.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.entity.*" %>
+<%@ page import="com.sourcegraph.demo.bigbadmonolith.util.HtmlUtils" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
     CustomerDAO customerDAO = new CustomerDAO();
@@ -16,8 +16,6 @@
     String customerId = request.getParameter("customerId");
     String month = request.getParameter("month");
     String year = request.getParameter("year");
-
-    String dbUrl = "jdbc:derby:./data/bigbadmonolith;create=true";
     
     DecimalFormat df = new DecimalFormat("#,##0.00");
 %>
@@ -83,7 +81,7 @@
                             for (Customer customer : customers) {
                                 String selected = customer.getId().toString().equals(customerId) ? "selected" : "";
                                 out.println("<option value='" + customer.getId() + "' " + selected + ">" + 
-                                          customer.getName() + "</option>");
+                                          HtmlUtils.htmlEscape(customer.getName()) + "</option>");
                             }
                         } catch (Exception e) {
                             out.println("<option value=''>Error loading customers</option>");
@@ -123,47 +121,38 @@
         <div class="report-section">
             <h2>Customer Bill Report</h2>
             <%
-                Connection conn = null;
-                PreparedStatement pstmt = null;
-                ResultSet rs = null;
-                
                 String customerName = "";
                 String customerEmail = "";
                 double totalAmount = 0.0;
                 double totalHours = 0.0;
                 
                 try {
-                    Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
-                    conn = DriverManager.getConnection(dbUrl);
+                    Long custId = Long.parseLong(customerId);
+                    Customer reportCustomer = customerDAO.findById(custId);
                     
-                    pstmt = conn.prepareStatement("SELECT name, email FROM customers WHERE id = ?");
-                    pstmt.setInt(1, Integer.parseInt(customerId));
-                    rs = pstmt.executeQuery();
-                    
-                    if (rs.next()) {
-                        customerName = rs.getString("name");
-                        customerEmail = rs.getString("email");
+                    if (reportCustomer != null) {
+                        customerName = reportCustomer.getName();
+                        customerEmail = reportCustomer.getEmail();
                     }
-                    rs.close();
-                    pstmt.close();
                     
-                    pstmt = conn.prepareStatement(
-                        "SELECT bh.date_logged, u.name as user_name, bc.name as category_name, " +
-                        "bh.hours, bc.hourly_rate, bh.hours * bc.hourly_rate as line_total, bh.note " +
-                        "FROM billable_hours bh " +
-                        "JOIN users u ON bh.user_id = u.id " +
-                        "JOIN billing_categories bc ON bh.category_id = bc.id " +
-                        "WHERE bh.customer_id = ? " +
-                        "ORDER BY bh.date_logged DESC"
-                    );
-                    pstmt.setInt(1, Integer.parseInt(customerId));
-                    rs = pstmt.executeQuery();
+                    List<BillableHour> custHours = billableHourDAO.findByCustomerId(custId);
+                    List<User> allUsers = userDAO.findAll();
+                    List<BillingCategory> allCategories = categoryDAO.findAll();
+                    
+                    Map<Long, User> userMap = new HashMap<>();
+                    for (User u : allUsers) {
+                        userMap.put(u.getId(), u);
+                    }
+                    Map<Long, BillingCategory> catMap = new HashMap<>();
+                    for (BillingCategory bc : allCategories) {
+                        catMap.put(bc.getId(), bc);
+                    }
             %>
             
             <div class="summary-box">
                 <h3>Bill To:</h3>
-                <p><strong><%= customerName %></strong><br>
-                Email: <%= customerEmail %></p>
+                <p><strong><%= HtmlUtils.htmlEscape(customerName) %></strong><br>
+                Email: <%= HtmlUtils.htmlEscape(customerEmail) %></p>
             </div>
             
             <table>
@@ -180,22 +169,26 @@
                 </thead>
                 <tbody>
                     <%
-                        while (rs.next()) {
-                            double lineTotal = rs.getDouble("line_total");
-                            double hours = rs.getDouble("hours");
-                            totalAmount += lineTotal;
-                            totalHours += hours;
+                        for (BillableHour bh : custHours) {
+                            User bhUser = userMap.get(bh.getUserId());
+                            BillingCategory bhCat = catMap.get(bh.getCategoryId());
+                            if (bhUser != null && bhCat != null) {
+                                double lineTotal = bh.getHours().doubleValue() * bhCat.getHourlyRate().doubleValue();
+                                double hours = bh.getHours().doubleValue();
+                                totalAmount += lineTotal;
+                                totalHours += hours;
                     %>
                         <tr>
-                            <td><%= rs.getDate("date_logged") %></td>
-                            <td><%= rs.getString("user_name") %></td>
-                            <td><%= rs.getString("category_name") %></td>
+                            <td><%= bh.getDateLogged().toString() %></td>
+                            <td><%= HtmlUtils.htmlEscape(bhUser.getName()) %></td>
+                            <td><%= HtmlUtils.htmlEscape(bhCat.getName()) %></td>
                             <td class="text-right"><%= df.format(hours) %></td>
-                            <td class="text-right">$<%= df.format(rs.getDouble("hourly_rate")) %></td>
+                            <td class="text-right">$<%= df.format(bhCat.getHourlyRate()) %></td>
                             <td class="text-right">$<%= df.format(lineTotal) %></td>
-                            <td><%= rs.getString("note") != null ? rs.getString("note") : "" %></td>
+                            <td><%= HtmlUtils.htmlEscape(bh.getNote() != null ? bh.getNote() : "") %></td>
                         </tr>
                     <%
+                            }
                         }
                     %>
                     <tr style="background-color: #f8f9fa; font-weight: bold;">
@@ -210,11 +203,7 @@
             
             <%
                 } catch (Exception e) {
-                    out.println("<p>Error generating customer report: " + e.getMessage() + "</p>");
-                } finally {
-                    try { if (rs != null) rs.close(); } catch (Exception e) {}
-                    try { if (pstmt != null) pstmt.close(); } catch (Exception e) {}
-                    try { if (conn != null) conn.close(); } catch (Exception e) {}
+                    out.println("<p>Error generating customer report: " + HtmlUtils.htmlEscape(e.getMessage()) + "</p>");
                 }
             %>
         </div>
@@ -222,33 +211,37 @@
             } else if ("monthly".equals(reportType) && year != null && month != null) {
         %>
         <div class="report-section">
-            <h2>Monthly Summary - <%= month %>/<%= year %></h2>
+            <h2>Monthly Summary - <%= HtmlUtils.htmlEscape(month) %>/<%= HtmlUtils.htmlEscape(year) %></h2>
             <%
-                Connection conn = null;
-                PreparedStatement pstmt = null;
-                ResultSet rs = null;
-                
                 try {
-                    Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
-                    conn = DriverManager.getConnection(dbUrl);
+                    List<BillableHour> allHours = billableHourDAO.findAll();
+                    List<Customer> allCustomers = customerDAO.findAll();
+                    List<BillingCategory> allCategories = categoryDAO.findAll();
                     
-                    String startDate = year + "-" + month + "-01";
-                    String endDate = year + "-" + month + "-31";
+                    int targetYear = Integer.parseInt(year);
+                    int targetMonth = Integer.parseInt(month);
                     
-                    pstmt = conn.prepareStatement(
-                        "SELECT c.name as customer_name, " +
-                        "SUM(bh.hours) as total_hours, " +
-                        "SUM(bh.hours * bc.hourly_rate) as total_amount " +
-                        "FROM billable_hours bh " +
-                        "JOIN customers c ON bh.customer_id = c.id " +
-                        "JOIN billing_categories bc ON bh.category_id = bc.id " +
-                        "WHERE bh.date_logged >= ? AND bh.date_logged <= ? " +
-                        "GROUP BY c.name " +
-                        "ORDER BY total_amount DESC"
-                    );
-                    pstmt.setDate(1, java.sql.Date.valueOf(startDate));
-                    pstmt.setDate(2, java.sql.Date.valueOf(endDate));
-                    rs = pstmt.executeQuery();
+                    Map<Long, Customer> custMap = new HashMap<>();
+                    for (Customer c : allCustomers) { custMap.put(c.getId(), c); }
+                    Map<Long, BillingCategory> catMap = new HashMap<>();
+                    for (BillingCategory bc : allCategories) { catMap.put(bc.getId(), bc); }
+                    
+                    // Group by customer
+                    Map<String, double[]> customerTotals = new LinkedHashMap<>();
+                    for (BillableHour bh : allHours) {
+                        LocalDate dl = bh.getDateLogged();
+                        if (dl.getYear() == targetYear && dl.getMonthValue() == targetMonth) {
+                            Customer c = custMap.get(bh.getCustomerId());
+                            BillingCategory bc = catMap.get(bh.getCategoryId());
+                            if (c != null && bc != null) {
+                                String cName = c.getName();
+                                double[] totals = customerTotals.getOrDefault(cName, new double[]{0.0, 0.0});
+                                totals[0] += bh.getHours().doubleValue();
+                                totals[1] += bh.getHours().doubleValue() * bc.getHourlyRate().doubleValue();
+                                customerTotals.put(cName, totals);
+                            }
+                        }
+                    }
             %>
             
             <table>
@@ -264,14 +257,14 @@
                         double monthlyTotal = 0.0;
                         double monthlyHours = 0.0;
                         
-                        while (rs.next()) {
-                            double customerTotal = rs.getDouble("total_amount");
-                            double customerHours = rs.getDouble("total_hours");
+                        for (Map.Entry<String, double[]> entry : customerTotals.entrySet()) {
+                            double customerHours = entry.getValue()[0];
+                            double customerTotal = entry.getValue()[1];
                             monthlyTotal += customerTotal;
                             monthlyHours += customerHours;
                     %>
                         <tr>
-                            <td><%= rs.getString("customer_name") %></td>
+                            <td><%= HtmlUtils.htmlEscape(entry.getKey()) %></td>
                             <td class="text-right"><%= df.format(customerHours) %></td>
                             <td class="text-right">$<%= df.format(customerTotal) %></td>
                         </tr>
@@ -288,11 +281,7 @@
             
             <%
                 } catch (Exception e) {
-                    out.println("<p>Error generating monthly report: " + e.getMessage() + "</p>");
-                } finally {
-                    try { if (rs != null) rs.close(); } catch (Exception e) {}
-                    try { if (pstmt != null) pstmt.close(); } catch (Exception e) {}
-                    try { if (conn != null) conn.close(); } catch (Exception e) {}
+                    out.println("<p>Error generating monthly report: " + HtmlUtils.htmlEscape(e.getMessage()) + "</p>");
                 }
             %>
         </div>
@@ -302,14 +291,15 @@
         <div class="report-section">
             <h2>Revenue Summary</h2>
             <%
-                Connection conn = null;
-                Statement stmt = null;
-                ResultSet rs = null;
-                
                 try {
-                    Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
-                    conn = DriverManager.getConnection(dbUrl);
-                    stmt = conn.createStatement();
+                    List<BillableHour> allHours = billableHourDAO.findAll();
+                    List<Customer> allCustomers = customerDAO.findAll();
+                    List<BillingCategory> allCategories = categoryDAO.findAll();
+                    
+                    Map<Long, Customer> custMap = new HashMap<>();
+                    for (Customer c : allCustomers) { custMap.put(c.getId(), c); }
+                    Map<Long, BillingCategory> catMap = new HashMap<>();
+                    for (BillingCategory bc : allCategories) { catMap.put(bc.getId(), bc); }
             %>
             
             <h3>By Customer</h3>
@@ -324,32 +314,38 @@
                 </thead>
                 <tbody>
                     <%
-                        rs = stmt.executeQuery(
-                            "SELECT c.name, " +
-                            "SUM(bh.hours) as total_hours, " +
-                            "SUM(bh.hours * bc.hourly_rate) as total_revenue, " +
-                            "AVG(bc.hourly_rate) as avg_rate " +
-                            "FROM customers c " +
-                            "LEFT JOIN billable_hours bh ON c.id = bh.customer_id " +
-                            "LEFT JOIN billing_categories bc ON bh.category_id = bc.id " +
-                            "GROUP BY c.name " +
-                            "ORDER BY total_revenue DESC"
-                        );
+                        // Revenue by customer
+                        Map<String, double[]> custRevenue = new LinkedHashMap<>();
+                        Map<String, List<Double>> custRates = new HashMap<>();
+                        for (Customer c : allCustomers) {
+                            custRevenue.put(c.getName(), new double[]{0.0, 0.0});
+                            custRates.put(c.getName(), new ArrayList<>());
+                        }
+                        for (BillableHour bh : allHours) {
+                            Customer c = custMap.get(bh.getCustomerId());
+                            BillingCategory bc = catMap.get(bh.getCategoryId());
+                            if (c != null && bc != null) {
+                                double[] totals = custRevenue.get(c.getName());
+                                totals[0] += bh.getHours().doubleValue();
+                                totals[1] += bh.getHours().doubleValue() * bc.getHourlyRate().doubleValue();
+                                custRates.get(c.getName()).add(bc.getHourlyRate().doubleValue());
+                            }
+                        }
                         
-                        while (rs.next()) {
-                            double totalHours = rs.getDouble("total_hours");
-                            double totalRevenue = rs.getDouble("total_revenue");
-                            double avgRate = rs.getDouble("avg_rate");
+                        for (Map.Entry<String, double[]> entry : custRevenue.entrySet()) {
+                            double revTotalHours = entry.getValue()[0];
+                            double revTotalRevenue = entry.getValue()[1];
+                            List<Double> rates = custRates.get(entry.getKey());
+                            double avgRate = rates.isEmpty() ? 0.0 : rates.stream().mapToDouble(d -> d).average().orElse(0.0);
                     %>
                         <tr>
-                            <td><%= rs.getString("name") %></td>
-                            <td class="text-right"><%= df.format(totalHours) %></td>
-                            <td class="text-right">$<%= df.format(totalRevenue) %></td>
+                            <td><%= HtmlUtils.htmlEscape(entry.getKey()) %></td>
+                            <td class="text-right"><%= df.format(revTotalHours) %></td>
+                            <td class="text-right">$<%= df.format(revTotalRevenue) %></td>
                             <td class="text-right">$<%= df.format(avgRate) %></td>
                         </tr>
                     <%
                         }
-                        rs.close();
                     %>
                 </tbody>
             </table>
@@ -366,23 +362,32 @@
                 </thead>
                 <tbody>
                     <%
-                        rs = stmt.executeQuery(
-                            "SELECT bc.name, bc.hourly_rate, " +
-                            "COALESCE(SUM(bh.hours), 0) as total_hours, " +
-                            "COALESCE(SUM(bh.hours * bc.hourly_rate), 0) as total_revenue " +
-                            "FROM billing_categories bc " +
-                            "LEFT JOIN billable_hours bh ON bc.id = bh.category_id " +
-                            "GROUP BY bc.name, bc.hourly_rate " +
-                            "ORDER BY total_revenue DESC"
-                        );
-                        
-                        while (rs.next()) {
+                        // Revenue by category — single pass over hours, grouped by category ID
+                        Map<Long, double[]> catTotals = new LinkedHashMap<>();
+                        for (BillingCategory bc : allCategories) {
+                            catTotals.put(bc.getId(), new double[]{0.0, 0.0});
+                        }
+                        for (BillableHour bh : allHours) {
+                            BillingCategory bc = catMap.get(bh.getCategoryId());
+                            if (bc != null) {
+                                double[] totals = catTotals.get(bc.getId());
+                                if (totals != null) {
+                                    totals[0] += bh.getHours().doubleValue();
+                                    totals[1] += bh.getHours().doubleValue() * bc.getHourlyRate().doubleValue();
+                                }
+                            }
+                        }
+
+                        for (BillingCategory bc : allCategories) {
+                            double[] totals = catTotals.get(bc.getId());
+                            double catTotalHours = totals[0];
+                            double catTotalRevenue = totals[1];
                     %>
                         <tr>
-                            <td><%= rs.getString("name") %></td>
-                            <td class="text-right">$<%= df.format(rs.getDouble("hourly_rate")) %></td>
-                            <td class="text-right"><%= df.format(rs.getDouble("total_hours")) %></td>
-                            <td class="text-right">$<%= df.format(rs.getDouble("total_revenue")) %></td>
+                            <td><%= HtmlUtils.htmlEscape(bc.getName()) %></td>
+                            <td class="text-right">$<%= df.format(bc.getHourlyRate()) %></td>
+                            <td class="text-right"><%= df.format(catTotalHours) %></td>
+                            <td class="text-right">$<%= df.format(catTotalRevenue) %></td>
                         </tr>
                     <%
                         }
@@ -392,11 +397,7 @@
             
             <%
                 } catch (Exception e) {
-                    out.println("<div class='error'>Error generating revenue summary: " + e.getMessage() + "</div>");
-                } finally {
-                    try { if (rs != null) rs.close(); } catch (Exception e) {}
-                    try { if (stmt != null) stmt.close(); } catch (Exception e) {}
-                    try { if (conn != null) conn.close(); } catch (Exception e) {}
+                    out.println("<div class='error'>Error generating revenue summary: " + HtmlUtils.htmlEscape(e.getMessage()) + "</div>");
                 }
             %>
         </div>

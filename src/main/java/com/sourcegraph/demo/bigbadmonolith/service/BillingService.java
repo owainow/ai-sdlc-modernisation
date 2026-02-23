@@ -7,10 +7,10 @@ import com.sourcegraph.demo.bigbadmonolith.entity.BillableHour;
 import com.sourcegraph.demo.bigbadmonolith.entity.BillingCategory;
 import com.sourcegraph.demo.bigbadmonolith.entity.Customer;
 import com.sourcegraph.demo.bigbadmonolith.util.DateTimeUtils;
-import org.joda.time.LocalDate;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,11 +29,18 @@ public class BillingService {
         
         List<BillableHour> hours = billableHourDAO.findByCustomerId(customerId);
         
+        // Batch load all categories to eliminate N+1 queries
+        List<BillingCategory> allCategories = categoryDAO.findAll();
+        Map<Long, BillingCategory> categoryMap = new HashMap<>();
+        for (BillingCategory cat : allCategories) {
+            categoryMap.put(cat.getId(), cat);
+        }
+        
         BigDecimal totalAmount = BigDecimal.ZERO;
         BigDecimal totalHours = BigDecimal.ZERO;
         
         for (BillableHour hour : hours) {
-            BillingCategory category = categoryDAO.findById(hour.getCategoryId());
+            BillingCategory category = categoryMap.get(hour.getCategoryId());
             if (category != null) {
                 BigDecimal lineAmount = hour.getHours().multiply(category.getHourlyRate());
                 totalAmount = totalAmount.add(lineAmount);
@@ -54,14 +61,21 @@ public class BillingService {
     public Map<String, Object> generateMonthlyReport(int year, int month) throws SQLException {
         List<BillableHour> allHours = billableHourDAO.findAll();
         
+        // Batch load all categories to eliminate N+1 queries
+        List<BillingCategory> allCategories = categoryDAO.findAll();
+        Map<Long, BillingCategory> categoryMap = new HashMap<>();
+        for (BillingCategory cat : allCategories) {
+            categoryMap.put(cat.getId(), cat);
+        }
+        
         BigDecimal totalRevenue = BigDecimal.ZERO;
         BigDecimal totalHours = BigDecimal.ZERO;
         Map<String, BigDecimal> revenueByCategory = new HashMap<>();
         
         for (BillableHour hour : allHours) {
             LocalDate dateLogged = hour.getDateLogged();
-            if (dateLogged.getYear() == year && dateLogged.getMonthOfYear() == month) {
-                BillingCategory category = categoryDAO.findById(hour.getCategoryId());
+            if (dateLogged.getYear() == year && dateLogged.getMonthValue() == month) {
+                BillingCategory category = categoryMap.get(hour.getCategoryId());
                 if (category != null) {
                     BigDecimal lineAmount = hour.getHours().multiply(category.getHourlyRate());
                     totalRevenue = totalRevenue.add(lineAmount);

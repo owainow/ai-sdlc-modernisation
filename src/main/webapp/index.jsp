@@ -1,6 +1,7 @@
 <%@ page import="java.util.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.dao.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.entity.*" %>
+<%@ page import="com.sourcegraph.demo.bigbadmonolith.util.HtmlUtils" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
     CustomerDAO customerDAO = new CustomerDAO();
@@ -35,7 +36,7 @@
         }
         
     } catch (Exception e) {
-        out.println("Database error: " + e.getMessage());
+        out.println("Database error: " + HtmlUtils.htmlEscape(e.getMessage()));
     }
 %>
 <html>

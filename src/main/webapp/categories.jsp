@@ -2,6 +2,7 @@
 <%@ page import="java.math.BigDecimal" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.dao.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.entity.*" %>
+<%@ page import="com.sourcegraph.demo.bigbadmonolith.util.HtmlUtils" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
     BillingCategoryDAO categoryDAO = new BillingCategoryDAO();
@@ -151,8 +152,8 @@
                 %>
                     <tr>
                         <td><%= category.getId() %></td>
-                        <td><%= category.getName() %></td>
-                        <td><%= category.getDescription() != null ? category.getDescription() : "" %></td>
+                        <td><%= HtmlUtils.htmlEscape(category.getName()) %></td>
+                        <td><%= HtmlUtils.htmlEscape(category.getDescription() != null ? category.getDescription() : "") %></td>
                         <td>$<%= String.format("%.2f", category.getHourlyRate()) %></td>
                         <td><%= String.format("%.2f", totalHours) %></td>
                         <td>$<%= String.format("%.2f", totalRevenue) %></td>
@@ -168,7 +169,7 @@
                 <%
                         }
                     } catch (Exception e) {
-                        out.println("<tr><td colspan='7'>Error loading categories: " + e.getMessage() + "</td></tr>");
+                        out.println("<tr><td colspan='7'>Error loading categories: " + HtmlUtils.htmlEscape(e.getMessage()) + "</td></tr>");
                     }
                 %>
             </tbody>

@@ -1,13 +1,13 @@
 package com.sourcegraph.demo.bigbadmonolith.entity;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 public class Customer {
     private Long id;
     private String name;
     private String email;
     private String address;
-    private DateTime createdAt;
+    private Instant createdAt;
 
     public Customer() {}
 
@@ -15,10 +15,10 @@ public class Customer {
         this.name = name;
         this.email = email;
         this.address = address;
-        this.createdAt = DateTime.now();
+        this.createdAt = Instant.now();
     }
 
-    public Customer(Long id, String name, String email, String address, DateTime createdAt) {
+    public Customer(Long id, String name, String email, String address, Instant createdAt) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -58,11 +58,11 @@ public class Customer {
         this.address = address;
     }
 
-    public DateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(DateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 }

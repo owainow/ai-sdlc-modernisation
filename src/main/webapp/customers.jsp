@@ -1,6 +1,7 @@
 <%@ page import="java.util.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.dao.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.entity.*" %>
+<%@ page import="com.sourcegraph.demo.bigbadmonolith.util.HtmlUtils" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
     CustomerDAO customerDAO = new CustomerDAO();
@@ -120,9 +121,9 @@
                 %>
                     <tr>
                         <td><%= customer.getId() %></td>
-                        <td><%= customer.getName() %></td>
-                        <td><%= customer.getEmail() %></td>
-                        <td><%= customer.getAddress() != null ? customer.getAddress() : "" %></td>
+                        <td><%= HtmlUtils.htmlEscape(customer.getName()) %></td>
+                        <td><%= HtmlUtils.htmlEscape(customer.getEmail()) %></td>
+                        <td><%= HtmlUtils.htmlEscape(customer.getAddress() != null ? customer.getAddress() : "") %></td>
                         <td><%= customer.getCreatedAt().toString() %></td>
                         <td>
                             <a href="customers.jsp?action=delete&id=<%= customer.getId() %>" 
@@ -135,7 +136,7 @@
                 <%
                         }
                     } catch (Exception e) {
-                        out.println("<tr><td colspan='6'>Error loading customers: " + e.getMessage() + "</td></tr>");
+                        out.println("<tr><td colspan='6'>Error loading customers: " + HtmlUtils.htmlEscape(e.getMessage()) + "</td></tr>");
                     }
                 %>
             </tbody>

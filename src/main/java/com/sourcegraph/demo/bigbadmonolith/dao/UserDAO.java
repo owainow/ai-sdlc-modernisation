@@ -1,6 +1,8 @@
 package com.sourcegraph.demo.bigbadmonolith.dao;
 
 import com.sourcegraph.demo.bigbadmonolith.entity.User;
+import com.sourcegraph.demo.bigbadmonolith.dto.PaginatedResponse;
+import com.sourcegraph.demo.bigbadmonolith.dto.PaginationRequest;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -104,6 +106,48 @@ public class UserDAO {
         }
         
         return users;
+    }
+
+    public PaginatedResponse<User> findAll(PaginationRequest pagination) {
+        long total = count();
+        String sql = "SELECT id, email, name FROM users ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        List<User> users = new ArrayList<>();
+
+        try (Connection conn = LibertyConnectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, pagination.getOffset());
+            stmt.setInt(2, pagination.getSize());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    users.add(new User(
+                        rs.getLong("id"),
+                        rs.getString("email"),
+                        rs.getString("name")
+                    ));
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find paginated users", e);
+        }
+
+        return new PaginatedResponse<>(users, pagination.getPage(), pagination.getSize(), total);
+    }
+
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM users";
+        try (Connection conn = LibertyConnectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+            return 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to count users", e);
+        }
     }
     
     public boolean delete(Long id) {

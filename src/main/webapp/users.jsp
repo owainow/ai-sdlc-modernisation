@@ -1,6 +1,7 @@
 <%@ page import="java.util.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.dao.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.entity.*" %>
+<%@ page import="com.sourcegraph.demo.bigbadmonolith.util.HtmlUtils" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
     UserDAO userDAO = new UserDAO();
@@ -120,15 +121,15 @@
                 %>
                     <tr>
                         <td><%= user.getId() %></td>
-                        <td><%= user.getName() %></td>
-                        <td><%= user.getEmail() %></td>
+                        <td><%= HtmlUtils.htmlEscape(user.getName()) %></td>
+                        <td><%= HtmlUtils.htmlEscape(user.getEmail()) %></td>
                         <td><%= String.format("%.2f", totalHours) %></td>
                         <td>$<%= String.format("%.2f", totalRevenue) %></td>
                     </tr>
                 <%
                         }
                     } catch (Exception e) {
-                        out.println("<tr><td colspan='5'>Error loading users: " + e.getMessage() + "</td></tr>");
+                        out.println("<tr><td colspan='5'>Error loading users: " + HtmlUtils.htmlEscape(e.getMessage()) + "</td></tr>");
                     }
                 %>
             </tbody>
