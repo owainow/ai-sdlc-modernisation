@@ -18,24 +18,14 @@ public class DateTimeUtils {
         if (date == null) {
             return "";
         }
-        try {
-            return date.format(DATE_FORMATTER);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Invalid Date";
-        }
+        return date.format(DATE_FORMATTER);
     }
     
     public static String formatDateTimeVerbose(Instant instant) {
-        if (instant != null) {
-            try {
-                return DATETIME_FORMATTER.format(instant.atZone(ZoneId.systemDefault()));
-            } catch (RuntimeException re) {
-                return null;
-            }
-        } else {
-            throw new RuntimeException("DateTime cannot be null");
+        if (instant == null) {
+            throw new IllegalArgumentException("DateTime cannot be null");
         }
+        return DATETIME_FORMATTER.format(instant.atZone(ZoneId.systemDefault()));
     }
     
     public static java.util.Date convertToJavaUtilDate(Instant instant) {

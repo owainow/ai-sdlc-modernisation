@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * T009: Characterisation tests for Customer entity — constructor, getters, setters,
- * Joda-Time DateTime field.
+ * java.time.Instant createdAt field.
  */
 class CustomerTest {
 
@@ -61,9 +61,8 @@ class CustomerTest {
     }
 
     @Test
-    void createdAtUsesJodaDateTime() {
+    void createdAtUsesJavaTimeInstant() {
         Customer customer = new Customer("Test", "test@test.com", "addr");
-        // Characterisation: createdAt is Joda DateTime, not java.time
         assertThat(customer.getCreatedAt()).isInstanceOf(Instant.class);
     }
 }

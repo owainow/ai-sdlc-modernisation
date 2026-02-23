@@ -41,7 +41,7 @@ class DateTimeUtilsTest {
     @Test
     void formatDateTimeVerboseThrowsForNull() {
         assertThatThrownBy(() -> DateTimeUtils.formatDateTimeVerbose(null))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("null");
     }
 

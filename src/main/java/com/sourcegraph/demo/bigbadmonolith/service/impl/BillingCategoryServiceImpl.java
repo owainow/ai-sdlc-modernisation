@@ -57,13 +57,17 @@ public class BillingCategoryServiceImpl implements BillingCategoryService {
     }
 
     private void validateRate(BillingCategory category) {
-        if (category.getHourlyRate() != null) {
-            if (category.getHourlyRate().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new ValidationException("Hourly rate must be greater than zero");
-            }
-            if (category.getHourlyRate().compareTo(new BigDecimal("10000")) > 0) {
-                throw new ValidationException("Hourly rate must not exceed 10,000");
-            }
+        if (category == null) {
+            throw new ValidationException("Billing category must not be null");
+        }
+        if (category.getHourlyRate() == null) {
+            throw new ValidationException("Hourly rate must not be null");
+        }
+        if (category.getHourlyRate().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidationException("Hourly rate must be greater than zero");
+        }
+        if (category.getHourlyRate().compareTo(new BigDecimal("10000")) > 0) {
+            throw new ValidationException("Hourly rate must not exceed 10,000");
         }
     }
 }

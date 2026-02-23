@@ -1,6 +1,7 @@
 package com.sourcegraph.demo.bigbadmonolith.dao;
 
 import com.sourcegraph.demo.bigbadmonolith.TestDatabaseConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -12,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * T016: Characterisation tests for ConnectionManager — getConnection, lifecycle,
- * document hardcoded credential pattern.
+ * env-var-based credential configuration.
  */
 class ConnectionManagerTest {
 
@@ -48,13 +49,13 @@ class ConnectionManagerTest {
     }
 
     @Test
-    void documentHardcodedCredentialPattern() {
-        // Characterisation: ConnectionManager has hardcoded credentials
-        // DB_URL = "jdbc:derby:./data/bigbadmonolith;create=true"
-        // DB_USER = "app"
-        // DB_PASSWORD = "app"
-        // This is a security vulnerability documented for US2 remediation
-        assertThat(true).as("Hardcoded credentials documented — see ConnectionManager lines 10-12").isTrue();
+    void credentialsAreConfiguredViaEnvVarsWithDefaults() {
+        // ConnectionManager reads DB_URL, DB_USER, DB_PASSWORD from env vars
+        // with sensible defaults for local development (Derby embedded).
+        // In production, these should be set via environment configuration.
+        HikariDataSource ds = ConnectionManager.getDataSource();
+        assertThat(ds).isNotNull();
+        assertThat(ds.getJdbcUrl()).contains("derby");
     }
 
     private boolean tableExists(DatabaseMetaData meta, String tableName) throws SQLException {

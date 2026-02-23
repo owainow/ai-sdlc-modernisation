@@ -17,7 +17,7 @@
         <h1>500</h1>
         <h2>Internal Server Error</h2>
         <p>Something went wrong. Please try again later.</p>
-        <p><a href="index.jsp">Return to Dashboard</a></p>
+        <p><a href="<%= request.getContextPath() %>/index.jsp">Return to Dashboard</a></p>
     </div>
 </body>
 </html>

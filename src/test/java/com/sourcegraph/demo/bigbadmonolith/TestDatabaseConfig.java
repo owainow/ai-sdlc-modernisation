@@ -7,9 +7,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- * Test database configuration helper that initialises an in-memory Derby database
+ * Test database configuration helper that initialises the embedded Derby database
  * with the same schema as production. Uses the existing ConnectionManager which
- * creates an embedded Derby at ./data/bigbadmonolith.
+ * creates a file-backed Derby at ./data/bigbadmonolith.
  */
 public class TestDatabaseConfig {
 

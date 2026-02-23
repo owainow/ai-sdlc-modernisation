@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * T011: Characterisation tests for BillableHour entity — constructor, getters, setters,
- * FK ID storage, Joda-Time dates.
+ * FK ID storage, java.time dates.
  */
 class BillableHourTest {
 
@@ -93,15 +93,13 @@ class BillableHourTest {
     }
 
     @Test
-    void dateLoggedUsesJodaLocalDate() {
-        // Characterisation: dateLogged is Joda LocalDate, not java.time.LocalDate
+    void dateLoggedUsesJavaTimeLocalDate() {
         BillableHour bh = new BillableHour(1L, 2L, 3L, new BigDecimal("1.00"), "note", LocalDate.now());
         assertThat(bh.getDateLogged()).isInstanceOf(java.time.LocalDate.class);
     }
 
     @Test
-    void createdAtUsesJodaDateTime() {
-        // Characterisation: createdAt is Joda DateTime
+    void createdAtUsesJavaTimeInstant() {
         BillableHour bh = new BillableHour(1L, 2L, 3L, new BigDecimal("1.00"), "note", LocalDate.now());
         assertThat(bh.getCreatedAt()).isInstanceOf(Instant.class);
     }

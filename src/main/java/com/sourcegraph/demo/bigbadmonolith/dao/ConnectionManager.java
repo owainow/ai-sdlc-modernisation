@@ -37,6 +37,7 @@ public class ConnectionManager {
         config.setIdleTimeout(600000);
         config.setMaxLifetime(1800000);
         config.setPoolName("BigBadMonolithPool");
+        config.setRegisterMbeans(true);
         
         dataSource = new HikariDataSource(config);
         initializeDatabase();

@@ -362,16 +362,26 @@
                 </thead>
                 <tbody>
                     <%
-                        // Revenue by category
+                        // Revenue by category — single pass over hours, grouped by category ID
+                        Map<Long, double[]> catTotals = new LinkedHashMap<>();
                         for (BillingCategory bc : allCategories) {
-                            double catTotalHours = 0.0;
-                            double catTotalRevenue = 0.0;
-                            for (BillableHour bh : allHours) {
-                                if (bh.getCategoryId().equals(bc.getId())) {
-                                    catTotalHours += bh.getHours().doubleValue();
-                                    catTotalRevenue += bh.getHours().doubleValue() * bc.getHourlyRate().doubleValue();
+                            catTotals.put(bc.getId(), new double[]{0.0, 0.0});
+                        }
+                        for (BillableHour bh : allHours) {
+                            BillingCategory bc = catMap.get(bh.getCategoryId());
+                            if (bc != null) {
+                                double[] totals = catTotals.get(bc.getId());
+                                if (totals != null) {
+                                    totals[0] += bh.getHours().doubleValue();
+                                    totals[1] += bh.getHours().doubleValue() * bc.getHourlyRate().doubleValue();
                                 }
                             }
+                        }
+
+                        for (BillingCategory bc : allCategories) {
+                            double[] totals = catTotals.get(bc.getId());
+                            double catTotalHours = totals[0];
+                            double catTotalRevenue = totals[1];
                     %>
                         <tr>
                             <td><%= HtmlUtils.htmlEscape(bc.getName()) %></td>
