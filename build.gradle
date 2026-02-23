@@ -39,8 +39,8 @@ dependencies {
     implementation('com.zaxxer:HikariCP:5.1.0')
 
     // SLF4J for HikariCP logging
-    implementation('org.slf4j:slf4j-api:2.0.16')
-    runtimeOnly('org.slf4j:slf4j-simple:2.0.16')
+    implementation('org.slf4j:slf4j-api:2.0.17')
+    runtimeOnly('org.slf4j:slf4j-simple:2.0.17')
 
     // JUnit 5
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
