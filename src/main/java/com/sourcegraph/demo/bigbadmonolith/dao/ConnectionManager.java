@@ -1,7 +1,9 @@
 package com.sourcegraph.demo.bigbadmonolith.dao;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -15,18 +17,37 @@ public class ConnectionManager {
     private static final String DB_PASSWORD = System.getenv("DB_PASSWORD") != null 
             ? System.getenv("DB_PASSWORD") 
             : "app";
+
+    private static final HikariDataSource dataSource;
     
     static {
         try {
             Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
-            initializeDatabase();
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Derby driver not found", e);
         }
+
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(DB_URL);
+        config.setUsername(DB_USER);
+        config.setPassword(DB_PASSWORD);
+        config.setMaximumPoolSize(10);
+        config.setMinimumIdle(2);
+        config.setConnectionTimeout(30000);
+        config.setIdleTimeout(600000);
+        config.setMaxLifetime(1800000);
+        config.setPoolName("BigBadMonolithPool");
+        
+        dataSource = new HikariDataSource(config);
+        initializeDatabase();
     }
     
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        return dataSource.getConnection();
+    }
+
+    public static HikariDataSource getDataSource() {
+        return dataSource;
     }
     
     private static void initializeDatabase() {
@@ -102,8 +123,11 @@ public class ConnectionManager {
     }
     
     public static void shutdown() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+        }
         try {
-            DriverManager.getConnection("jdbc:derby:;shutdown=true");
+            java.sql.DriverManager.getConnection("jdbc:derby:;shutdown=true");
         } catch (SQLException e) {
             // Expected exception on shutdown
         }
