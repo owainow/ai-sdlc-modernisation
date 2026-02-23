@@ -9,7 +9,7 @@ import com.sourcegraph.demo.bigbadmonolith.entity.BillableHour;
 import com.sourcegraph.demo.bigbadmonolith.entity.BillingCategory;
 import com.sourcegraph.demo.bigbadmonolith.entity.Customer;
 import com.sourcegraph.demo.bigbadmonolith.entity.User;
-import org.joda.time.LocalDate;
+import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

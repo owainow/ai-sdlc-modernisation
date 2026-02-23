@@ -6,7 +6,7 @@ import com.sourcegraph.demo.bigbadmonolith.entity.BillingCategory;
 import com.sourcegraph.demo.bigbadmonolith.entity.Customer;
 import com.sourcegraph.demo.bigbadmonolith.entity.User;
 import com.sourcegraph.demo.bigbadmonolith.integration.BaseIntegrationTest;
-import org.joda.time.LocalDate;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

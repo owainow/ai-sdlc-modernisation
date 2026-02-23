@@ -4,8 +4,8 @@ import com.sourcegraph.demo.bigbadmonolith.entity.BillableHour;
 import com.sourcegraph.demo.bigbadmonolith.entity.BillingCategory;
 import com.sourcegraph.demo.bigbadmonolith.entity.Customer;
 import com.sourcegraph.demo.bigbadmonolith.entity.User;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
+import java.time.Instant;
+import java.time.LocalDate;
 
 import java.math.BigDecimal;
 
@@ -36,7 +36,7 @@ public class TestDataFactory {
     }
 
     public static Customer createCustomerWithId(Long id, String name, String email, String address) {
-        return new Customer(id, name, email, address, DateTime.now());
+        return new Customer(id, name, email, address, Instant.now());
     }
 
     public static BillingCategory createBillingCategory() {

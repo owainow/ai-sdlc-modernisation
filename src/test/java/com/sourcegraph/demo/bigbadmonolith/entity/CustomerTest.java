@@ -1,6 +1,6 @@
 package com.sourcegraph.demo.bigbadmonolith.entity;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +33,7 @@ class CustomerTest {
 
     @Test
     void fiveArgConstructorSetsAllFields() {
-        DateTime createdAt = new DateTime(2024, 1, 15, 10, 30, 0);
+        Instant createdAt = Instant.parse("2024-01-15T10:30:00Z");
         Customer customer = new Customer(1L, "Acme Corp", "billing@acme.com", "123 Business St", createdAt);
         assertThat(customer.getId()).isEqualTo(1L);
         assertThat(customer.getName()).isEqualTo("Acme Corp");
@@ -45,7 +45,7 @@ class CustomerTest {
     @Test
     void settersUpdateAllFields() {
         Customer customer = new Customer();
-        DateTime now = DateTime.now();
+        Instant now = Instant.now();
 
         customer.setId(42L);
         customer.setName("Updated Corp");
@@ -64,6 +64,6 @@ class CustomerTest {
     void createdAtUsesJodaDateTime() {
         Customer customer = new Customer("Test", "test@test.com", "addr");
         // Characterisation: createdAt is Joda DateTime, not java.time
-        assertThat(customer.getCreatedAt()).isInstanceOf(DateTime.class);
+        assertThat(customer.getCreatedAt()).isInstanceOf(Instant.class);
     }
 }

@@ -10,7 +10,7 @@ import com.sourcegraph.demo.bigbadmonolith.entity.BillingCategory;
 import com.sourcegraph.demo.bigbadmonolith.entity.Customer;
 import com.sourcegraph.demo.bigbadmonolith.entity.User;
 import com.sourcegraph.demo.bigbadmonolith.integration.BaseIntegrationTest;
-import org.joda.time.LocalDate;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -97,7 +97,7 @@ class BillingServiceTest extends BaseIntegrationTest {
         billableHourDAO.save(TestDataFactory.createBillableHour(customer.getId(), user.getId(), devCategory.getId(),
                 new BigDecimal("4.00"), "Last month", lastMonth));
 
-        Map<String, Object> report = billingService.generateMonthlyReport(thisMonth.getYear(), thisMonth.getMonthOfYear());
+        Map<String, Object> report = billingService.generateMonthlyReport(thisMonth.getYear(), thisMonth.getMonthValue());
 
         BigDecimal totalHours = (BigDecimal) report.get("totalHours");
         assertThat(totalHours).isEqualByComparingTo(new BigDecimal("8.00"));
@@ -111,7 +111,7 @@ class BillingServiceTest extends BaseIntegrationTest {
         billableHourDAO.save(TestDataFactory.createBillableHour(customer.getId(), user.getId(), consultingCategory.getId(),
                 new BigDecimal("4.00"), "Consulting", today));
 
-        Map<String, Object> report = billingService.generateMonthlyReport(today.getYear(), today.getMonthOfYear());
+        Map<String, Object> report = billingService.generateMonthlyReport(today.getYear(), today.getMonthValue());
 
         @SuppressWarnings("unchecked")
         Map<String, BigDecimal> revenueByCategory = (Map<String, BigDecimal>) report.get("revenueByCategory");

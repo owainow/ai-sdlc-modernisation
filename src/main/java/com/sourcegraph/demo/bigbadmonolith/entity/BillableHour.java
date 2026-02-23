@@ -1,9 +1,8 @@
 package com.sourcegraph.demo.bigbadmonolith.entity;
 
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
-
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
 
 public class BillableHour {
     private Long id;
@@ -13,7 +12,7 @@ public class BillableHour {
     private BigDecimal hours;
     private String note;
     private LocalDate dateLogged;
-    private DateTime createdAt;
+    private Instant createdAt;
 
     public BillableHour() {}
 
@@ -24,10 +23,10 @@ public class BillableHour {
         this.hours = hours;
         this.note = note;
         this.dateLogged = dateLogged;
-        this.createdAt = DateTime.now();
+        this.createdAt = Instant.now();
     }
 
-    public BillableHour(Long id, Long customerId, Long userId, Long categoryId, BigDecimal hours, String note, LocalDate dateLogged, DateTime createdAt) {
+    public BillableHour(Long id, Long customerId, Long userId, Long categoryId, BigDecimal hours, String note, LocalDate dateLogged, Instant createdAt) {
         this.id = id;
         this.customerId = customerId;
         this.userId = userId;
@@ -94,11 +93,11 @@ public class BillableHour {
         this.dateLogged = dateLogged;
     }
 
-    public DateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(DateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 }

@@ -7,10 +7,10 @@ import com.sourcegraph.demo.bigbadmonolith.entity.BillableHour;
 import com.sourcegraph.demo.bigbadmonolith.entity.BillingCategory;
 import com.sourcegraph.demo.bigbadmonolith.entity.Customer;
 import com.sourcegraph.demo.bigbadmonolith.util.DateTimeUtils;
-import org.joda.time.LocalDate;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +60,7 @@ public class BillingService {
         
         for (BillableHour hour : allHours) {
             LocalDate dateLogged = hour.getDateLogged();
-            if (dateLogged.getYear() == year && dateLogged.getMonthOfYear() == month) {
+            if (dateLogged.getYear() == year && dateLogged.getMonthValue() == month) {
                 BillingCategory category = categoryDAO.findById(hour.getCategoryId());
                 if (category != null) {
                     BigDecimal lineAmount = hour.getHours().multiply(category.getHourlyRate());

@@ -1,7 +1,7 @@
 package com.sourcegraph.demo.bigbadmonolith.entity;
 
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
+import java.time.Instant;
+import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -29,7 +29,7 @@ class BillableHourTest {
 
     @Test
     void sixArgConstructorSetsFieldsAndCreatedAt() {
-        LocalDate dateLogged = new LocalDate(2024, 6, 15);
+        LocalDate dateLogged = LocalDate.of(2024, 6, 15);
         BillableHour bh = new BillableHour(1L, 2L, 3L, new BigDecimal("8.50"), "Dev work", dateLogged);
 
         assertThat(bh.getId()).isNull();
@@ -44,8 +44,8 @@ class BillableHourTest {
 
     @Test
     void eightArgConstructorSetsAllFields() {
-        LocalDate dateLogged = new LocalDate(2024, 3, 10);
-        DateTime createdAt = new DateTime(2024, 3, 10, 9, 0, 0);
+        LocalDate dateLogged = LocalDate.of(2024, 3, 10);
+        Instant createdAt = Instant.parse("2024-03-10T09:00:00Z");
         BillableHour bh = new BillableHour(10L, 1L, 2L, 3L, new BigDecimal("4.25"), "Support", dateLogged, createdAt);
 
         assertThat(bh.getId()).isEqualTo(10L);
@@ -61,8 +61,8 @@ class BillableHourTest {
     @Test
     void settersUpdateAllFields() {
         BillableHour bh = new BillableHour();
-        LocalDate date = new LocalDate(2024, 7, 1);
-        DateTime now = DateTime.now();
+        LocalDate date = LocalDate.of(2024, 7, 1);
+        Instant now = Instant.now();
 
         bh.setId(99L);
         bh.setCustomerId(10L);
@@ -96,13 +96,13 @@ class BillableHourTest {
     void dateLoggedUsesJodaLocalDate() {
         // Characterisation: dateLogged is Joda LocalDate, not java.time.LocalDate
         BillableHour bh = new BillableHour(1L, 2L, 3L, new BigDecimal("1.00"), "note", LocalDate.now());
-        assertThat(bh.getDateLogged()).isInstanceOf(LocalDate.class);
+        assertThat(bh.getDateLogged()).isInstanceOf(java.time.LocalDate.class);
     }
 
     @Test
     void createdAtUsesJodaDateTime() {
         // Characterisation: createdAt is Joda DateTime
         BillableHour bh = new BillableHour(1L, 2L, 3L, new BigDecimal("1.00"), "note", LocalDate.now());
-        assertThat(bh.getCreatedAt()).isInstanceOf(DateTime.class);
+        assertThat(bh.getCreatedAt()).isInstanceOf(Instant.class);
     }
 }

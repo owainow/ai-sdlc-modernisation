@@ -1,10 +1,10 @@
 package com.sourcegraph.demo.bigbadmonolith.dao;
 
 import com.sourcegraph.demo.bigbadmonolith.entity.BillableHour;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
 
 import java.sql.*;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,8 +21,8 @@ public class BillableHourDAO {
             stmt.setLong(3, billableHour.getCategoryId());
             stmt.setBigDecimal(4, billableHour.getHours());
             stmt.setString(5, billableHour.getNote());
-            stmt.setDate(6, new Date(billableHour.getDateLogged().toDateTimeAtStartOfDay().getMillis()));
-            stmt.setTimestamp(7, new Timestamp((billableHour.getCreatedAt() != null ? billableHour.getCreatedAt() : DateTime.now()).getMillis()));
+            stmt.setDate(6, Date.valueOf(billableHour.getDateLogged()));
+            stmt.setTimestamp(7, Timestamp.from(billableHour.getCreatedAt() != null ? billableHour.getCreatedAt() : Instant.now()));
             
             stmt.executeUpdate();
             
@@ -111,7 +111,7 @@ public class BillableHourDAO {
             stmt.setLong(3, billableHour.getCategoryId());
             stmt.setBigDecimal(4, billableHour.getHours());
             stmt.setString(5, billableHour.getNote());
-            stmt.setDate(6, new Date(billableHour.getDateLogged().toDateTimeAtStartOfDay().getMillis()));
+            stmt.setDate(6, Date.valueOf(billableHour.getDateLogged()));
             stmt.setLong(7, billableHour.getId());
             
             return stmt.executeUpdate() > 0;
@@ -137,8 +137,8 @@ public class BillableHourDAO {
             rs.getLong("category_id"),
             rs.getBigDecimal("hours"),
             rs.getString("note"),
-            LocalDate.fromDateFields(rs.getDate("date_logged")),
-            new DateTime(rs.getTimestamp("created_at"))
+            rs.getDate("date_logged").toLocalDate(),
+            rs.getTimestamp("created_at").toInstant()
         );
     }
 }

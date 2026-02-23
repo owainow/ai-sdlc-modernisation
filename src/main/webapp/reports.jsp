@@ -1,7 +1,7 @@
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.DecimalFormat" %>
 <%@ page import="java.math.BigDecimal" %>
-<%@ page import="org.joda.time.LocalDate" %>
+<%@ page import="java.time.LocalDate" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.dao.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.entity.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.util.HtmlUtils" %>
@@ -230,7 +230,7 @@
                     Map<String, double[]> customerTotals = new LinkedHashMap<>();
                     for (BillableHour bh : allHours) {
                         LocalDate dl = bh.getDateLogged();
-                        if (dl.getYear() == targetYear && dl.getMonthOfYear() == targetMonth) {
+                        if (dl.getYear() == targetYear && dl.getMonthValue() == targetMonth) {
                             Customer c = custMap.get(bh.getCustomerId());
                             BillingCategory bc = catMap.get(bh.getCategoryId());
                             if (c != null && bc != null) {

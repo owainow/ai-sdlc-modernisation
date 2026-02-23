@@ -1,9 +1,9 @@
 package com.sourcegraph.demo.bigbadmonolith.dao;
 
 import com.sourcegraph.demo.bigbadmonolith.entity.Customer;
-import org.joda.time.DateTime;
 
 import java.sql.*;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +28,7 @@ public class CustomerDAO {
             stmt.setString(1, customer.getName());
             stmt.setString(2, customer.getEmail());
             stmt.setString(3, customer.getAddress());
-            stmt.setTimestamp(4, new Timestamp((customer.getCreatedAt() != null ? customer.getCreatedAt() : DateTime.now()).getMillis()));
+            stmt.setTimestamp(4, Timestamp.from(customer.getCreatedAt() != null ? customer.getCreatedAt() : Instant.now()));
             
             stmt.executeUpdate();
             
@@ -117,7 +117,7 @@ public class CustomerDAO {
             rs.getString("name"),
             rs.getString("email"),
             rs.getString("address"),
-            new DateTime(rs.getTimestamp("created_at"))
+            rs.getTimestamp("created_at").toInstant()
         );
     }
 }
