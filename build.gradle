@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'war'
+    id 'jacoco'
     id 'io.openliberty.tools.gradle.Liberty' version '3.8.2'
 }
 
@@ -13,6 +14,10 @@ repositories {
 
 ext {
     junitVersion = '5.11.0'
+    mockitoVersion = '5.14.2'
+    assertjVersion = '3.27.7'
+    testcontainersVersion = '1.20.4'
+    restAssuredVersion = '5.5.0'
 }
 
 sourceCompatibility = '11'
@@ -36,12 +41,49 @@ dependencies {
 
     implementation('joda-time:joda-time:2.12.5')
 
+    // JUnit 5
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+
+    // Mockito
+    testImplementation("org.mockito:mockito-core:${mockitoVersion}")
+    testImplementation("org.mockito:mockito-junit-jupiter:${mockitoVersion}")
+
+    // AssertJ
+    testImplementation("org.assertj:assertj-core:${assertjVersion}")
+
+    // Testcontainers
+    testImplementation("org.testcontainers:junit-jupiter:${testcontainersVersion}")
+
+    // REST Assured
+    testImplementation("io.rest-assured:rest-assured:${restAssuredVersion}")
 }
 
 test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.80
+            }
+        }
+    }
 }
 
 // Liberty configuration
