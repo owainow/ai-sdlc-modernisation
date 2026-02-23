@@ -6,9 +6,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class ConnectionManager {
-    private static final String DB_URL = "jdbc:derby:./data/bigbadmonolith;create=true";
-    private static final String DB_USER = "app";
-    private static final String DB_PASSWORD = "app";
+    private static final String DB_URL = System.getenv("DB_URL") != null 
+            ? System.getenv("DB_URL") 
+            : "jdbc:derby:./data/bigbadmonolith;create=true";
+    private static final String DB_USER = System.getenv("DB_USER") != null 
+            ? System.getenv("DB_USER") 
+            : "app";
+    private static final String DB_PASSWORD = System.getenv("DB_PASSWORD") != null 
+            ? System.getenv("DB_PASSWORD") 
+            : "app";
     
     static {
         try {

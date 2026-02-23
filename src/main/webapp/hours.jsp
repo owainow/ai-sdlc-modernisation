@@ -4,6 +4,7 @@
 <%@ page import="org.joda.time.LocalDate" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.dao.*" %>
 <%@ page import="com.sourcegraph.demo.bigbadmonolith.entity.*" %>
+<%@ page import="com.sourcegraph.demo.bigbadmonolith.util.HtmlUtils" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
     BillableHourDAO billableHourDAO = new BillableHourDAO();
@@ -127,7 +128,7 @@
                             List<Customer> customers = customerDAO.findAll();
                             for (Customer customer : customers) {
                                 out.println("<option value='" + customer.getId() + "'>" + 
-                                          customer.getName() + "</option>");
+                                          HtmlUtils.htmlEscape(customer.getName()) + "</option>");
                             }
                         } catch (Exception e) {
                             out.println("<option value=''>Error loading customers</option>");
@@ -145,7 +146,7 @@
                             List<User> users = userDAO.findAll();
                             for (User user : users) {
                                 out.println("<option value='" + user.getId() + "'>" + 
-                                          user.getName() + "</option>");
+                                          HtmlUtils.htmlEscape(user.getName()) + "</option>");
                             }
                         } catch (Exception e) {
                             out.println("<option value=''>Error loading users</option>");
@@ -163,7 +164,7 @@
                             List<BillingCategory> categories = categoryDAO.findAll();
                             for (BillingCategory category : categories) {
                                 out.println("<option value='" + category.getId() + "'>" + 
-                                          category.getName() + " ($" + category.getHourlyRate() + "/hr)</option>");
+                                          HtmlUtils.htmlEscape(category.getName()) + " ($" + category.getHourlyRate() + "/hr)</option>");
                             }
                         } catch (Exception e) {
                             out.println("<option value=''>Error loading categories</option>");
@@ -245,20 +246,20 @@
                 %>
                     <tr>
                         <td><%= hour.getDateLogged().toString() %></td>
-                        <td><%= customer.getName() %></td>
-                        <td><%= user.getName() %></td>
-                        <td><%= category.getName() %></td>
+                        <td><%= HtmlUtils.htmlEscape(customer.getName()) %></td>
+                        <td><%= HtmlUtils.htmlEscape(user.getName()) %></td>
+                        <td><%= HtmlUtils.htmlEscape(category.getName()) %></td>
                         <td><%= hour.getHours() %></td>
                         <td>$<%= String.format("%.2f", category.getHourlyRate()) %></td>
                         <td>$<%= String.format("%.2f", total) %></td>
-                        <td><%= hour.getNote() != null ? hour.getNote() : "" %></td>
+                        <td><%= HtmlUtils.htmlEscape(hour.getNote() != null ? hour.getNote() : "") %></td>
                     </tr>
                 <%
                                 count++;
                             }
                         }
                     } catch (Exception e) {
-                        out.println("<tr><td colspan='8'>Error loading recent hours: " + e.getMessage() + "</td></tr>");
+                        out.println("<tr><td colspan='8'>Error loading recent hours: " + HtmlUtils.htmlEscape(e.getMessage()) + "</td></tr>");
                     }
                 %>
             </tbody>
