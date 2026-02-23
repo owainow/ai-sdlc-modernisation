@@ -1,25 +1,43 @@
-# Big Bad Monolith
+# Big Bad Monolith — Modernisation in Progress
 
-A Jakarta EE sample application implementing a billing platform where users can track billable hours for customers across different categories. Features Derby database integration and comprehensive REST API endpoints.
+A Jakarta EE billing platform undergoing modernisation from a JSP monolith to Spring Boot 3.x microservices on Azure Container Apps. This repository tracks the complete strangler fig migration journey.
+
+## Modernisation Status
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1-3 | ✅ Complete | Test infrastructure, CI pipeline, 85%+ coverage safety net |
+| Phase 4 (US2) | ✅ Complete | Security fixes — XSS escaping, credential externalisation, error pages |
+| Phase 5 (US3) | ✅ Complete | Architecture — Service interfaces, exception hierarchy, Flyway |
+| Phase 6 (US4) | ✅ Complete | Date/Time — Joda-Time → java.time, Java 17+ target |
+| Phase 7 (US5) | ✅ Complete | Performance — HikariCP pooling, pagination, N+1 elimination |
+| Phase 8 (US6) | 🔲 Pending | Decompose into 4 Spring Boot microservices |
+| Phase 9 | 🔲 Pending | Polish — data migration, documentation, Dependabot |
 
 ## Features
 
-- DAO pattern with raw JDBC for database persistence
-- Embedded Derby database for local development
-- Complete billing platform functionality
-- User and customer management
-- Billable hours tracking with categories
-- Billing reports and revenue calculations
-- Sample data auto-initialization
-- Legacy JSP web interface demonstrating anti-patterns
+- Service layer with interfaces and implementations (UserService, CustomerService, etc.)
+- Exception hierarchy (ResourceNotFoundException, ValidationException, DuplicateResourceException)
+- HikariCP connection pooling (replaces unused commons-dbcp2)
+- Paginated query support (PaginationRequest + PaginatedResponse DTOs)
+- XSS protection via HtmlUtils.htmlEscape() in all JSP pages
+- Custom 404/500 error pages (no stack trace exposure)
+- Credentials externalised via environment variables
+- java.time exclusively (zero Joda-Time dependency)
+- Thread-safe DateTimeFormatter (replaces SimpleDateFormat)
+- N+1 query elimination in BillingService (batch category loading)
+- Flyway migration (V1__initial_schema.sql)
+- 85%+ test coverage with JaCoCo 80% gate
+- GitHub Actions CI pipeline (compile → test → coverage → artifact upload)
+- Dependabot for automated dependency updates
 
 ## Domain Model
 
 ### Core Entities
-- **User**: Represents employees who log billable hours
-- **Customer**: Companies that are billed for services
-- **BillingCategory**: Categories of work with associated hourly rates (e.g., Development, Consulting, Support)
-- **BillableHour**: Individual time entries with hours (BigDecimal), notes, and date logged
+- **User**: Employees who log billable hours
+- **Customer**: Companies billed for services
+- **BillingCategory**: Work categories with hourly rates (e.g., Development $150/hr)
+- **BillableHour**: Time entries with hours (BigDecimal), notes, date (java.time.LocalDate)
 
 ### Database Schema
 ```sql
@@ -38,90 +56,93 @@ billable_hours (id, customer_id, user_id, category_id, hours, note, date_logged,
 # Run tests
 ./gradlew test
 
+# Run tests with coverage report
+./gradlew test jacocoTestReport
+
+# Verify 80% coverage gate
+./gradlew jacocoTestCoverageVerification
+
 # Generate WAR file
 ./gradlew war
 ```
 
 ## Architecture
 
-This application demonstrates a legacy JSP-based architecture with the following anti-patterns:
+### Current State (Modernised Monolith)
+- **Language**: Java 17+ on Open Liberty (Jakarta EE)
+- **Database**: Embedded Apache Derby with HikariCP connection pooling
+- **Service Layer**: Interface-based services with DI-ready constructors
+- **Security**: XSS escaping, externalised credentials, custom error pages
+- **Date/Time**: java.time exclusively (thread-safe)
+- **Testing**: 85%+ line coverage, JUnit 5 + Mockito + AssertJ
 
-### Data Access Layer
-- **DAO Pattern**: Raw JDBC implementation for database operations
-- **Connection Management**: Manual connection handling (legacy pattern)
-- **Transaction Management**: No explicit transaction boundaries
+### Target State (Phase 8)
+- **Language**: Java 21 LTS on Spring Boot 3.x
+- **Platform**: Azure Container Apps
+- **Database**: Azure Database for PostgreSQL Flexible Server
+- **Services**: 4 independently deployable microservices
+- **Observability**: OpenTelemetry → Application Insights
 
-### Presentation Layer (JSP)
-- **Scriptlets**: Java code mixed directly with HTML markup
-- **Business Logic in JSP**: Complex calculations and validations in presentation layer
-- **Direct DAO Instantiation**: DAOs created directly in JSP pages
-- **Resource Management**: Database connections handled in JSP
+### Target Microservices (4 Bounded Contexts)
 
-### Anti-Patterns Demonstrated
-- **Scriptlet Hell**: Extensive use of `<% %>` blocks
-- **Tight Coupling**: Direct instantiation of dependencies
-- **Mixed Concerns**: Presentation, business logic, and data access in same files
-- **Poor Error Handling**: Technical errors exposed to users
-- **No Input Validation**: Raw form parameters used without sanitization
+| Service | Responsibilities | API Base |
+|---------|-----------------|----------|
+| User Management | User CRUD, authentication | `/api/v1/users` |
+| Customer Management | Customer CRUD | `/api/v1/customers` |
+| Billing & Time Tracking | Categories, Hours, Summary | `/api/v1/categories`, `/api/v1/hours` |
+| Reporting (CQRS) | Monthly, Range, Utilisation reports | `/api/v1/reports` |
 
-## Sample Data
+## Project Structure
 
-The application automatically initializes with sample data including:
-- 2 users (John Doe, Jane Smith)
-- 3 customers (Acme Corp, TechStart Inc, MegaCorp Ltd)
-- 3 billing categories (Development $150/hr, Consulting $200/hr, Support $100/hr)
-- Multiple billable hour entries across different customers and categories
+```
+src/main/java/com/sourcegraph/demo/bigbadmonolith/
+├── dao/            DAO pattern with HikariCP pooled connections
+├── dto/            PaginationRequest, PaginatedResponse
+├── entity/         User, Customer, BillingCategory, BillableHour (java.time)
+├── exception/      ResourceNotFound, DuplicateResource, Validation
+├── service/        Interfaces + impl/ implementations
+├── util/           DateTimeUtils (java.time), HtmlUtils (XSS escaping)
+└── StartupListener.java
 
-## Database
-
-The application uses an embedded Derby database stored in `./data/bigbadmonolith`. The database and tables are automatically created on first run using raw JDBC.
+src/main/webapp/    JSP pages (XSS-escaped), custom error pages
+src/main/resources/ Flyway migrations (db/migration/)
+src/test/           85%+ coverage (entity, dao, service, integration, security tests)
+.github/            CI workflow + Dependabot config
+specs/              Modernisation spec, plan, tasks, contracts
+```
 
 ## Running the Application
 
-### Option 1: WebSphere Liberty (Recommended)
-
-#### Development Mode
+### Development Mode (Open Liberty)
 ```bash
-# Start Liberty in development mode (auto-reload on changes)
 ./liberty-dev.sh        # Linux/macOS
 liberty-dev.bat         # Windows
 ```
 
-#### Manual Liberty Deployment
+### Manual Deployment
 ```bash
-# Build the application
 ./gradlew build
-
-# Start Liberty server with the application
-./gradlew libertyStart
-
-# Stop Liberty server
-./gradlew libertyStop
+./gradlew libertyStart  # Start Liberty server
+./gradlew libertyStop   # Stop Liberty server
 ```
 
+### Access Points
+- **HTTP**: `http://localhost:9080/big-bad-monolith/`
+- **HTTPS**: `https://localhost:9443/big-bad-monolith/`
 
+## Configuration
 
-### Option 2: Other Jakarta EE Application Servers
+### Environment Variables
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_URL` | `jdbc:derby:./data/bigbadmonolith;create=true` | Database JDBC URL |
+| `DB_USER` | `app` | Database username |
+| `DB_PASSWORD` | `app` | Database password |
 
-1. Build: `./gradlew build`
-2. Deploy the generated WAR file (`build/libs/big-bad-monolith-1.0-SNAPSHOT.war`) to your Jakarta EE application server
-3. Access API at: `http://localhost:[port]/big-bad-monolith/api/`
+## Specs & Documentation
 
-## Access Points
-
-### Web Interface
-- **Liberty Development**: `http://localhost:9080/big-bad-monolith/`
-- **Liberty HTTPS**: `https://localhost:9443/big-bad-monolith/`
-
-## Web Interface
-
-The application includes a complete JSP-based web interface providing:
-
-- **Dashboard** - Overview of customers, users, and revenue metrics
-- **Customer Management** - Add, view, and manage customer information
-- **User Management** - Add and view system users  
-- **Billing Categories** - Manage work categories and hourly rates
-- **Time Logging** - Log billable hours with detailed tracking
-- **Reporting** - Generate customer bills, monthly summaries, and revenue reports
-
-The web interface demonstrates traditional JSP-based architecture patterns commonly found in legacy enterprise applications that need modernization. The application showcases numerous anti-patterns that training participants will learn to identify and refactor.
+- **Spec**: `specs/001-modernise-monolith/spec.md`
+- **Plan**: `specs/001-modernise-monolith/plan.md`
+- **Tasks**: `specs/001-modernise-monolith/tasks.md`
+- **API Contracts**: `specs/001-modernise-monolith/contracts/`
+- **Constitution**: `.specify/memory/constitution.md`
