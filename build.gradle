@@ -36,7 +36,7 @@ dependencies {
     implementation('org.apache.derby:derbytools:10.15.2.0')
     
     // Connection pooling — HikariCP (replaces unused commons-dbcp2)
-    implementation('com.zaxxer:HikariCP:5.1.0')
+    implementation('com.zaxxer:HikariCP:7.0.2')
 
     // SLF4J for HikariCP logging
     implementation('org.slf4j:slf4j-api:2.0.16')
