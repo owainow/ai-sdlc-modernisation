@@ -15,8 +15,8 @@ ext {
     junitVersion = '5.11.0'
 }
 
-sourceCompatibility = '21'
-targetCompatibility = '21'
+sourceCompatibility = '11'
+targetCompatibility = '11'
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
@@ -26,9 +26,9 @@ dependencies {
     compileOnly('jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0')
     compileOnly('jakarta.servlet:jakarta.servlet-api:6.1.0')
     
-    // Derby database
-    implementation('org.apache.derby:derby:10.17.1.0')
-    implementation('org.apache.derby:derbytools:10.17.1.0')
+    // Derby database (10.15.2.0 is compatible with Java 11)
+    implementation('org.apache.derby:derby:10.15.2.0')
+    implementation('org.apache.derby:derbytools:10.15.2.0')
     
     // Connection pooling
     implementation('org.apache.commons:commons-dbcp2:2.11.0')

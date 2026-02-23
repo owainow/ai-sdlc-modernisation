@@ -14,7 +14,7 @@
 
     <!-- Define an HTTP endpoint -->
     <httpEndpoint id="defaultHttpEndpoint"
-                  httpPort="9080"
+                  httpPort="9081"
                   httpsPort="9443" />
 
     <!-- Automatically expand applications -->
