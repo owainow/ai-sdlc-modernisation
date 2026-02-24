@@ -9,6 +9,10 @@ param location string = 'uksouth'
 @description('Resource group name')
 param resourceGroupName string = 'rg-billing-${environmentName}'
 
+@secure()
+@description('PostgreSQL administrator password')
+param postgresAdminPassword string
+
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: resourceGroupName
   location: location
@@ -39,6 +43,7 @@ module postgresql 'modules/postgresql.bicep' = {
     environmentName: environmentName
     location: location
     keyVaultName: keyvault.outputs.keyVaultName
+    adminPassword: postgresAdminPassword
   }
 }
 

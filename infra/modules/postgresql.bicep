@@ -12,7 +12,7 @@ param adminLogin string = 'pgadmin'
 
 @secure()
 @description('Administrator password')
-param adminPassword string = 'P@ssw0rd${uniqueString(resourceGroup().id)}'
+param adminPassword string
 
 resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-preview' = {
   name: 'psql-billing-${environmentName}'
