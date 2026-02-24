@@ -4,9 +4,6 @@ param environmentName string
 @description('Location for resources')
 param location string
 
-@description('Key Vault name for storing connection strings')
-param keyVaultName string
-
 @description('Administrator login')
 param adminLogin string = 'pgadmin'
 

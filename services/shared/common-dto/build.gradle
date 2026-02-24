@@ -1,8 +1,15 @@
 plugins {
     id 'java-library'
+    id 'io.spring.dependency-management'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:3.2.2"
+    }
 }
 
 dependencies {
-    api 'com.fasterxml.jackson.core:jackson-annotations:2.16.1'
-    compileOnly 'jakarta.validation:jakarta.validation-api:3.0.2'
+    api 'com.fasterxml.jackson.core:jackson-annotations'
+    compileOnly 'jakarta.validation:jakarta.validation-api'
 }

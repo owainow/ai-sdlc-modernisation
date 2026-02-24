@@ -1,6 +1,5 @@
 package com.sourcegraph.demo.user.exception;
 
-import com.sourcegraph.demo.common.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;

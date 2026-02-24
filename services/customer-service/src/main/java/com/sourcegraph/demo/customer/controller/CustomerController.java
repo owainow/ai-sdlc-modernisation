@@ -68,7 +68,10 @@ public class CustomerController {
         return ResponseEntity.noContent().build();
     }
 
-    public record CreateCustomerRequest(String name) {}
+    public record CreateCustomerRequest(
+            @jakarta.validation.constraints.NotBlank(message = "Customer name is required")
+            @jakarta.validation.constraints.Size(max = 200, message = "Customer name must not exceed 200 characters")
+            String name) {}
 
     public record CustomerResponse(UUID id, String name, String createdAt, String updatedAt) {
         public static CustomerResponse from(Customer c) {

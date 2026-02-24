@@ -120,9 +120,29 @@ public class BillingController {
     }
 
     // --- DTOs ---
-    public record CreateCategoryRequest(String name, BigDecimal hourlyRate) {}
-    public record CreateHourRequest(UUID userId, UUID customerId, UUID categoryId,
-                                    BigDecimal hours, LocalDate workDate) {}
+    public record CreateCategoryRequest(
+            @jakarta.validation.constraints.NotBlank(message = "Category name is required")
+            @jakarta.validation.constraints.Size(max = 100, message = "Category name must not exceed 100 characters")
+            String name,
+            @jakarta.validation.constraints.NotNull(message = "Hourly rate is required")
+            @jakarta.validation.constraints.DecimalMin(value = "0.01", message = "Hourly rate must be greater than 0")
+            @jakarta.validation.constraints.DecimalMax(value = "10000", message = "Hourly rate must not exceed 10000")
+            BigDecimal hourlyRate) {}
+
+    public record CreateHourRequest(
+            @jakarta.validation.constraints.NotNull(message = "User ID is required")
+            UUID userId,
+            @jakarta.validation.constraints.NotNull(message = "Customer ID is required")
+            UUID customerId,
+            @jakarta.validation.constraints.NotNull(message = "Category ID is required")
+            UUID categoryId,
+            @jakarta.validation.constraints.NotNull(message = "Hours is required")
+            @jakarta.validation.constraints.DecimalMin(value = "0.01", message = "Hours must be greater than 0")
+            @jakarta.validation.constraints.DecimalMax(value = "24", message = "Hours must not exceed 24")
+            BigDecimal hours,
+            @jakarta.validation.constraints.NotNull(message = "Work date is required")
+            @jakarta.validation.constraints.PastOrPresent(message = "Work date must not be in the future")
+            LocalDate workDate) {}
 
     public record CategoryResponse(UUID id, String name, BigDecimal hourlyRate,
                                    String createdAt, String updatedAt) {

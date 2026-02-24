@@ -73,15 +73,29 @@ public class UserController {
     }
 
     public record CreateUserRequest(
+            @jakarta.validation.constraints.NotBlank(message = "Username is required")
+            @jakarta.validation.constraints.Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
             String username,
+            @jakarta.validation.constraints.NotBlank(message = "First name is required")
+            @jakarta.validation.constraints.Size(max = 100, message = "First name must not exceed 100 characters")
             String firstName,
+            @jakarta.validation.constraints.NotBlank(message = "Last name is required")
+            @jakarta.validation.constraints.Size(max = 100, message = "Last name must not exceed 100 characters")
             String lastName,
+            @jakarta.validation.constraints.NotBlank(message = "Password is required")
+            @jakarta.validation.constraints.Size(min = 8, message = "Password must be at least 8 characters")
             String password) {
     }
 
     public record UpdateUserRequest(
+            @jakarta.validation.constraints.NotBlank(message = "Username is required")
+            @jakarta.validation.constraints.Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
             String username,
+            @jakarta.validation.constraints.NotBlank(message = "First name is required")
+            @jakarta.validation.constraints.Size(max = 100, message = "First name must not exceed 100 characters")
             String firstName,
+            @jakarta.validation.constraints.NotBlank(message = "Last name is required")
+            @jakarta.validation.constraints.Size(max = 100, message = "Last name must not exceed 100 characters")
             String lastName) {
     }
 

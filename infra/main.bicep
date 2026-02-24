@@ -42,7 +42,6 @@ module postgresql 'modules/postgresql.bicep' = {
   params: {
     environmentName: environmentName
     location: location
-    keyVaultName: keyvault.outputs.keyVaultName
     adminPassword: postgresAdminPassword
   }
 }

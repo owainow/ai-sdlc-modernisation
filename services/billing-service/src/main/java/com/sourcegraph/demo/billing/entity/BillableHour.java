@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -46,6 +47,7 @@ public class BillableHour {
     private BigDecimal hours;
 
     @NotNull(message = "Work date is required")
+    @PastOrPresent(message = "Work date must not be in the future")
     @Column(name = "work_date", nullable = false)
     private LocalDate workDate;
 

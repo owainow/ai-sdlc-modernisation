@@ -32,7 +32,9 @@ resource cpuAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
     description: 'CPU usage exceeds 80%'
     severity: 2
     enabled: true
-    scopes: []
+    scopes: [
+      appInsights.id
+    ]
     evaluationFrequency: 'PT5M'
     windowSize: 'PT15M'
     criteria: {

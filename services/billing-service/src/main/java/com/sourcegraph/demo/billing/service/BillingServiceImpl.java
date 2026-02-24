@@ -185,19 +185,15 @@ public class BillingServiceImpl implements BillingService {
 
     private void validateDailyHoursCap(UUID userId, LocalDate workDate, BigDecimal newHours, UUID excludeId) {
         BigDecimal existing = hourRepository.sumHoursByUserIdAndWorkDate(userId, workDate);
-        BigDecimal total = existing.add(newHours);
+        BigDecimal total;
         if (excludeId != null) {
-            // When updating, subtract the old entry's hours to avoid double-counting
-            hourRepository.findById(excludeId).ifPresent(h -> {
-                if (h.getUserId().equals(userId) && h.getWorkDate().equals(workDate)) {
-                    // existing sum includes old value, so effective total is (existing - old + new)
-                }
-            });
             BigDecimal oldHours = hourRepository.findById(excludeId)
                     .filter(h -> h.getUserId().equals(userId) && h.getWorkDate().equals(workDate))
                     .map(BillableHour::getHours)
                     .orElse(BigDecimal.ZERO);
             total = existing.subtract(oldHours).add(newHours);
+        } else {
+            total = existing.add(newHours);
         }
         if (total.compareTo(new BigDecimal("24")) > 0) {
             throw new ValidationException("Total hours for user on " + workDate + " would exceed 24");

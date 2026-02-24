@@ -13,9 +13,16 @@ param postgresqlFqdn string
 @description('Redis host name')
 param redisHostName string
 
+@description('ACR login server (e.g., acrbilling.azurecr.io)')
+param acrLoginServer string = 'acrbilling.azurecr.io'
+
+@description('Container image tag')
+param imageTag string = 'latest'
+
 var services = [
   {
     name: 'user-service'
+    dbName: 'userdb'
     port: 8080
     cpu: '0.5'
     memory: '1Gi'
@@ -24,6 +31,7 @@ var services = [
   }
   {
     name: 'customer-service'
+    dbName: 'customerdb'
     port: 8080
     cpu: '0.5'
     memory: '1Gi'
@@ -32,6 +40,7 @@ var services = [
   }
   {
     name: 'billing-service'
+    dbName: 'billingdb'
     port: 8080
     cpu: '1.0'
     memory: '2Gi'
@@ -40,6 +49,7 @@ var services = [
   }
   {
     name: 'reporting-service'
+    dbName: 'reportingdb'
     port: 8080
     cpu: '1.0'
     memory: '2Gi'
@@ -72,14 +82,14 @@ resource containerApps 'Microsoft.App/containerApps@2024-03-01' = [for service i
       containers: [
         {
           name: service.name
-          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+          image: '${acrLoginServer}/${service.name}:${imageTag}'
           resources: {
             cpu: json(service.cpu)
             memory: service.memory
           }
           env: [
             { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
-            { name: 'SPRING_DATASOURCE_URL', value: 'jdbc:postgresql://${postgresqlFqdn}:5432/${replace(service.name, '-', '')}db' }
+            { name: 'SPRING_DATASOURCE_URL', value: 'jdbc:postgresql://${postgresqlFqdn}:5432/${service.dbName}' }
             { name: 'SPRING_REDIS_HOST', value: redisHostName }
           ]
         }
