@@ -1,7 +1,7 @@
 # Dependabot configuration for dependency updates
 version: 2
 updates:
-  # Gradle dependencies
+  # Gradle dependencies (root + all subprojects)
   - package-ecosystem: "gradle"
     directory: "/"
     schedule:
@@ -15,6 +15,7 @@ updates:
         patterns:
           - "org.springframework.boot*"
           - "org.springframework.cloud*"
+          - "org.springframework.security*"
       testing:
         patterns:
           - "org.junit*"
@@ -22,6 +23,11 @@ updates:
           - "org.assertj*"
           - "org.testcontainers*"
           - "io.rest-assured*"
+      database:
+        patterns:
+          - "org.postgresql*"
+          - "org.flywaydb*"
+          - "com.h2database*"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -33,3 +39,36 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+
+  # Docker — service Dockerfiles
+  - package-ecosystem: "docker"
+    directory: "/services/user-service"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/services/customer-service"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/services/billing-service"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/services/reporting-service"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"

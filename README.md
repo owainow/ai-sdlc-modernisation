@@ -1,6 +1,6 @@
-# Big Bad Monolith — Modernisation in Progress
+# Big Bad Monolith — Modernised to Microservices
 
-A Jakarta EE billing platform undergoing modernisation from a JSP monolith to Spring Boot 3.x microservices on Azure Container Apps. This repository tracks the complete strangler fig migration journey.
+A Jakarta EE billing platform modernised from a JSP monolith to **4 Spring Boot 3.x microservices** deployed on Azure Container Apps. This repository tracks the complete strangler fig migration journey.
 
 ## Modernisation Status
 
@@ -11,138 +11,167 @@ A Jakarta EE billing platform undergoing modernisation from a JSP monolith to Sp
 | Phase 5 (US3) | ✅ Complete | Architecture — Service interfaces, exception hierarchy, Flyway |
 | Phase 6 (US4) | ✅ Complete | Date/Time — Joda-Time → java.time, Java 17+ target |
 | Phase 7 (US5) | ✅ Complete | Performance — HikariCP pooling, pagination, N+1 elimination |
-| Phase 8 (US6) | 🔲 Pending | Decompose into 4 Spring Boot microservices |
-| Phase 9 | 🔲 Pending | Polish — data migration, documentation, Dependabot |
+| Phase 8 (US6) | ✅ Complete | Decompose into 4 Spring Boot microservices on Azure Container Apps |
+| Phase 9 | ✅ Complete | Polish — data migration, documentation, Dependabot |
 
-## Features
+## Microservices Architecture
 
-- Service layer with interfaces and implementations (UserService, CustomerService, etc.)
-- Exception hierarchy (ResourceNotFoundException, ValidationException, DuplicateResourceException)
-- HikariCP connection pooling (replaces unused commons-dbcp2)
-- Paginated query support (PaginationRequest + PaginatedResponse DTOs)
-- XSS protection via HtmlUtils.htmlEscape() in all JSP pages
-- Custom 404/500 error pages (no stack trace exposure)
-- Credentials externalised via environment variables
-- java.time exclusively (zero Joda-Time dependency)
-- Thread-safe DateTimeFormatter (replaces SimpleDateFormat)
-- N+1 query elimination in BillingService (batch category loading)
-- Flyway migration (V1__initial_schema.sql)
-- 85%+ test coverage with JaCoCo 80% gate
-- GitHub Actions CI pipeline (compile → test → coverage → artifact upload)
-- Dependabot for automated dependency updates
+| Service | Port | API Base | Description |
+|---------|------|----------|-------------|
+| **user-service** | 8081 | `/api/v1/users` | User CRUD, BCrypt authentication |
+| **customer-service** | 8082 | `/api/v1/customers` | Customer CRUD with delete-guard |
+| **billing-service** | 8083 | `/api/v1/categories`, `/api/v1/hours`, `/api/v1/billing/summary` | Categories, Hours (24h daily cap), Billing Summary, Dapr events |
+| **reporting-service** | 8084 | `/api/v1/reports` | Monthly, Range, Utilisation reports (CQRS read model) |
+
+### Shared Modules
+- **common-dto** — `ApiResponse` envelope, `PaginatedResponse`, RFC 7807 support
+- **common-test** — `TestDataFactory`, shared test utilities
+
+## Quick Start
+
+```bash
+# Clone
+git clone https://github.com/owainow/ai-sdlc-modernisation.git
+cd ai-sdlc-modernisation
+
+# Build all services
+./gradlew clean build
+
+# Run all tests (monolith + microservices)
+./gradlew test
+
+# Start all microservices locally
+docker compose up --build
+
+# Or run individually
+./gradlew :services:user-service:bootRun
+./gradlew :services:customer-service:bootRun
+./gradlew :services:billing-service:bootRun
+./gradlew :services:reporting-service:bootRun
+```
+
+See [`specs/001-modernise-monolith/quickstart.md`](specs/001-modernise-monolith/quickstart.md) for the full 30-minute setup guide.
 
 ## Domain Model
 
-### Core Entities
-- **User**: Employees who log billable hours
-- **Customer**: Companies billed for services
-- **BillingCategory**: Work categories with hourly rates (e.g., Development $150/hr)
-- **BillableHour**: Time entries with hours (BigDecimal), notes, date (java.time.LocalDate)
+### Core Entities (UUID primary keys, `java.time.*`)
+- **User**: Employees who log billable hours (BCrypt passwords, Bean Validation)
+- **Customer**: Companies billed for services (unique name constraint)
+- **BillingCategory**: Work categories with hourly rates (0 < rate ≤ 10,000)
+- **BillableHour**: Time entries (> 0, ≤ 24h daily cap per user, `java.time.LocalDate`)
 
-### Database Schema
-```sql
-users (id, email, name)
-customers (id, name, email, address, created_at)
-billing_categories (id, name, description, hourly_rate)
-billable_hours (id, customer_id, user_id, category_id, hours, note, date_logged, created_at)
-```
+### Database (PostgreSQL per service)
+| Database | Service | Tables |
+|----------|---------|--------|
+| `userdb` | user-service | `users` |
+| `customerdb` | customer-service | `customers` |
+| `billingdb` | billing-service | `billing_categories`, `billable_hours` |
+| `reportingdb` | reporting-service | `billing_read_model` (CQRS projection) |
 
-## Build & Run
+## Build & Test
 
 ```bash
-# Build the project
-./gradlew build
+./gradlew compileJava                    # Compile all modules
+./gradlew test                           # Run all tests
+./gradlew jacocoTestReport               # Generate coverage report
+./gradlew jacocoTestCoverageVerification # Verify 80% coverage gate
 
-# Run tests
-./gradlew test
-
-# Run tests with coverage report
-./gradlew test jacocoTestReport
-
-# Verify 80% coverage gate
-./gradlew jacocoTestCoverageVerification
-
-# Generate WAR file
-./gradlew war
+# Individual service tests
+./gradlew :services:user-service:test
+./gradlew :services:customer-service:test
+./gradlew :services:billing-service:test
+./gradlew :services:reporting-service:test
 ```
 
-## Architecture
+## API Contracts
 
-### Current State (Modernised Monolith)
-- **Language**: Java 17+ on Open Liberty (Jakarta EE)
-- **Database**: Embedded Apache Derby with HikariCP connection pooling
-- **Service Layer**: Interface-based services with DI-ready constructors
-- **Security**: XSS escaping, externalised credentials, custom error pages
-- **Date/Time**: java.time exclusively (thread-safe)
-- **Testing**: 85%+ line coverage, JUnit 5 + Mockito + AssertJ
+All services follow the `{status, data, errors}` response envelope with RFC 7807 ProblemDetail for errors.
 
-### Target State (Phase 8)
-- **Language**: Java 21 LTS on Spring Boot 3.x
-- **Platform**: Azure Container Apps
-- **Database**: Azure Database for PostgreSQL Flexible Server
-- **Services**: 4 independently deployable microservices
-- **Observability**: OpenTelemetry → Application Insights
-
-### Target Microservices (4 Bounded Contexts)
-
-| Service | Responsibilities | API Base |
-|---------|-----------------|----------|
-| User Management | User CRUD, authentication | `/api/v1/users` |
-| Customer Management | Customer CRUD | `/api/v1/customers` |
-| Billing & Time Tracking | Categories, Hours, Summary | `/api/v1/categories`, `/api/v1/hours` |
-| Reporting (CQRS) | Monthly, Range, Utilisation reports | `/api/v1/reports` |
+- [User API](specs/001-modernise-monolith/contracts/user-api.md) — CRUD, pagination, 409 on duplicate username
+- [Customer API](specs/001-modernise-monolith/contracts/customer-api.md) — CRUD, 409 on delete with linked hours
+- [Billing API](specs/001-modernise-monolith/contracts/billing-api.md) — Categories + Hours + Summary, Dapr events
+- [Reporting API](specs/001-modernise-monolith/contracts/reporting-api.md) — Monthly, Range, Utilisation (CQRS)
 
 ## Project Structure
 
 ```
-src/main/java/com/sourcegraph/demo/bigbadmonolith/
-├── dao/            DAO pattern with HikariCP pooled connections
-├── dto/            PaginationRequest, PaginatedResponse
-├── entity/         User, Customer, BillingCategory, BillableHour (java.time)
-├── exception/      ResourceNotFound, DuplicateResource, Validation
-├── service/        Interfaces + impl/ implementations
-├── util/           DateTimeUtils (java.time), HtmlUtils (XSS escaping)
-└── StartupListener.java
-
-src/main/webapp/    JSP pages (XSS-escaped), custom error pages
-src/main/resources/ Flyway migrations (db/migration/)
-src/test/           85%+ coverage (entity, dao, service, integration, security tests)
-.github/            CI workflow + Dependabot config
-specs/              Modernisation spec, plan, tasks, contracts
+├── services/                           # Spring Boot microservices
+│   ├── user-service/                   # User Management
+│   ├── customer-service/               # Customer Management
+│   ├── billing-service/                # Billing & Time Tracking
+│   ├── reporting-service/              # Reporting (CQRS)
+│   └── shared/
+│       ├── common-dto/                 # ApiResponse, PaginatedResponse
+│       └── common-test/               # TestDataFactory
+├── src/                                # Legacy monolith (kept for reference)
+│   ├── main/java/                      # Modernised monolith code
+│   └── test/java/                      # 85%+ coverage safety net
+├── infra/                              # Azure Bicep IaC
+│   ├── main.bicep                      # Orchestrator
+│   ├── modules/                        # ACA, PostgreSQL, Key Vault, Redis, monitoring
+│   └── parameters/                     # dev, staging, prod environments
+├── tests/load/                         # k6 load test scripts
+├── docs/runbooks/                      # Per-service operational runbooks
+├── scripts/                            # Data migration scripts
+├── .github/workflows/
+│   ├── ci.yml                          # CI: compile → test → coverage
+│   └── deploy.yml                      # CD: build → test → ACR → ACA
+├── docker-compose.yml                  # Local dev (4 services + PostgreSQL + Redis)
+├── build.gradle                        # Root build with Spring Boot BOM
+└── settings.gradle                     # Multi-module configuration
 ```
 
-## Running the Application
+## Infrastructure (Azure)
 
-### Development Mode (Open Liberty)
+Deployed via Bicep IaC under `infra/`:
+
+| Resource | Module | Description |
+|----------|--------|-------------|
+| Azure Container Apps | `container-apps.bicep` | 4 services with auto-scaling |
+| PostgreSQL Flexible Server | `postgresql.bicep` | 4 databases, zone-redundant (prod) |
+| Azure Key Vault | `keyvault.bicep` | Secrets with Managed Identity |
+| Azure Cache for Redis | `redis.bicep` | Caching with TLS 1.2+ |
+| Azure Monitor + App Insights | `monitoring.bicep` | Metrics, alerts, distributed tracing |
+
 ```bash
-./liberty-dev.sh        # Linux/macOS
-liberty-dev.bat         # Windows
+# Deploy to Azure
+az deployment sub create --location uksouth \
+  --template-file infra/main.bicep \
+  --parameters infra/parameters/dev.bicepparam
 ```
 
-### Manual Deployment
+## Legacy Monolith (Open Liberty)
+
+The original monolith is preserved under `src/` with its test safety net:
+
 ```bash
-./gradlew build
-./gradlew libertyStart  # Start Liberty server
-./gradlew libertyStop   # Stop Liberty server
+./liberty-dev.sh                        # Start Liberty in dev mode
+# Access: http://localhost:9080/big-bad-monolith/
 ```
-
-### Access Points
-- **HTTP**: `http://localhost:9080/big-bad-monolith/`
-- **HTTPS**: `https://localhost:9443/big-bad-monolith/`
 
 ## Configuration
 
-### Environment Variables
+### Microservices (Environment Variables)
+| Variable | Description |
+|----------|-------------|
+| `SPRING_DATASOURCE_URL` | PostgreSQL JDBC URL |
+| `SPRING_DATASOURCE_USERNAME` | Database username |
+| `SPRING_DATASOURCE_PASSWORD` | Database password |
+
+### Legacy Monolith (Environment Variables)
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DB_URL` | `jdbc:derby:./data/bigbadmonolith;create=true` | Database JDBC URL |
 | `DB_USER` | `app` | Database username |
 | `DB_PASSWORD` | `app` | Database password |
 
-## Specs & Documentation
+## Documentation
 
-- **Spec**: `specs/001-modernise-monolith/spec.md`
-- **Plan**: `specs/001-modernise-monolith/plan.md`
-- **Tasks**: `specs/001-modernise-monolith/tasks.md`
-- **API Contracts**: `specs/001-modernise-monolith/contracts/`
-- **Constitution**: `.specify/memory/constitution.md`
+- **Spec**: [`specs/001-modernise-monolith/spec.md`](specs/001-modernise-monolith/spec.md)
+- **Plan**: [`specs/001-modernise-monolith/plan.md`](specs/001-modernise-monolith/plan.md)
+- **Tasks**: [`specs/001-modernise-monolith/tasks.md`](specs/001-modernise-monolith/tasks.md)
+- **Data Model**: [`specs/001-modernise-monolith/data-model.md`](specs/001-modernise-monolith/data-model.md)
+- **API Contracts**: [`specs/001-modernise-monolith/contracts/`](specs/001-modernise-monolith/contracts/)
+- **Quickstart**: [`specs/001-modernise-monolith/quickstart.md`](specs/001-modernise-monolith/quickstart.md)
+- **Constitution**: [`.specify/memory/constitution.md`](.specify/memory/constitution.md)
+- **Runbooks**: [`docs/runbooks/`](docs/runbooks/)
