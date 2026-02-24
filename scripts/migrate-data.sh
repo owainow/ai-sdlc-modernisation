@@ -69,17 +69,12 @@ echo "  ✓ Billing categories migrated"
 echo "[4/4] Migrating sample billable hours to billingdb..."
 $PSQL -d billingdb <<'SQL'
 -- Insert sample billable hours using existing UUIDs from users, customers, and categories
--- In production, these would be mapped from Derby integer IDs to new UUIDs
+-- Billable hours require cross-service ID mapping (user UUIDs from userdb,
+-- customer UUIDs from customerdb, category UUIDs from billingdb).
+-- Use the billing-service REST API to create entries after the above tables are seeded.
 DO $$
-DECLARE
-  v_user_id UUID;
-  v_customer_id UUID;
-  v_category_id UUID;
 BEGIN
-  -- Get first user, customer, and category for sample data
-  SELECT id INTO v_user_id FROM billing_categories LIMIT 0; -- placeholder
-  -- In production, use a proper ID mapping table
-  RAISE NOTICE 'Sample billable hours migration requires ID mapping from Derby. Skipping auto-generation.';
+  RAISE NOTICE 'Billable hours migration requires cross-service UUID mapping.';
   RAISE NOTICE 'Use the billing-service API to create billable hours after user/customer/category migration.';
 END $$;
 SQL
@@ -89,7 +84,7 @@ echo ""
 echo "=== Migration Complete ==="
 echo ""
 echo "Notes:"
-echo "  - User passwords are set to dummy BCrypt hashes. Reset via the user-service API."
+echo "  - User passwords are set to placeholder BCrypt hashes. Reset via the user-service API."
 echo "  - Billable hours require cross-service UUID mapping. Use the billing-service API."
 echo "  - Reporting read model will be populated automatically via Dapr events."
 echo ""
