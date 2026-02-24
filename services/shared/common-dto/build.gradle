@@ -1,0 +1,8 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api 'com.fasterxml.jackson.core:jackson-annotations:2.16.1'
+    compileOnly 'jakarta.validation:jakarta.validation-api:3.0.2'
+}
