@@ -36,6 +36,18 @@ A Jakarta EE billing platform modernised from a JSP monolith to **4 Spring Boot 
 | **billing-service** | 8083 | `/api/v1/categories`, `/api/v1/hours`, `/api/v1/billing/summary` | Categories, Hours (24h cap), Billing Summary, Dapr events |
 | **reporting-service** | 8084 | `/api/v1/reports` | Monthly, Range, Utilisation reports (CQRS read model) |
 
+### Frontend
+
+The microservices expose **REST APIs only** — there is no SPA frontend yet. The target architecture ([spec.md](specs/001-modernise-monolith/spec.md)) envisions a modern SPA connecting through an API Gateway, but the current modernisation focused on backend decomposition following the strangler fig pattern.
+
+**Current options for interacting with the APIs:**
+
+| Method | Description |
+|--------|-------------|
+| **curl / Postman** | Hit REST endpoints directly (see [API examples](#try-the-apis) below) |
+| **Legacy JSP UI** | Original monolith frontend at `src/main/webapp/*.jsp` — runs on Open Liberty via `./liberty-dev.sh` on `http://localhost:9080/big-bad-monolith/`. Talks to embedded Derby, **not** the new microservices. |
+| **Future SPA** | Planned but out of scope — would consume the `/api/v1/*` endpoints via an API Gateway |
+
 ---
 
 ## Prerequisites
