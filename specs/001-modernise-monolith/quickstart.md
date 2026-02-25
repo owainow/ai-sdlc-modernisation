@@ -1,8 +1,8 @@
 # Quickstart: Modernise Monolith Billing Platform
 
-**Phase 1 Output** | **Date**: 2026-02-23 | **Plan**: [plan.md](plan.md)
+**Final Output** | **Date**: 2026-02-24 | **Plan**: [plan.md](plan.md)
 
-This guide enables a new developer to set up the development environment and run all tests within 30 minutes (SC-006).
+This guide enables a new developer to set up the development environment and run all services within 30 minutes (SC-006).
 
 ---
 
@@ -10,14 +10,13 @@ This guide enables a new developer to set up the development environment and run
 
 | Tool | Version | Installation |
 |------|---------|-------------|
-| Java JDK | 21 (LTS) | [Microsoft Build of OpenJDK](https://learn.microsoft.com/java/openjdk/download) |
+| Java JDK | 17+ (LTS) | [Microsoft Build of OpenJDK](https://learn.microsoft.com/java/openjdk/download) |
 | Gradle | 8.x (via wrapper) | Included — use `./gradlew` or `.\gradlew.bat` |
 | Git | 2.x+ | [git-scm.com](https://git-scm.com/) |
-| Docker Desktop | 4.x+ | [docker.com](https://www.docker.com/products/docker-desktop/) (required for Testcontainers) |
-| Azure CLI | 2.x+ | [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (Phase 4+) |
-| Azure Developer CLI (azd) | Latest | [Install azd](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (Phase 4+) |
+| Docker Desktop | 4.x+ | [docker.com](https://www.docker.com/products/docker-desktop/) (required for Docker Compose) |
+| Azure CLI | 2.x+ | [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (deployment only) |
 
-## Clone & Build
+## Clone & Build (5 minutes)
 
 ```bash
 # Clone the repository
@@ -26,9 +25,9 @@ cd ai-sdlc-modernisation
 
 # Verify Java version
 java -version
-# Expected: openjdk version "21.x.x"
+# Expected: openjdk version "17.x.x" or higher
 
-# Build the project
+# Build all modules (monolith + 4 microservices)
 ./gradlew clean build       # Linux/macOS
 .\gradlew.bat clean build   # Windows
 ```
@@ -74,46 +73,122 @@ java -version
 
 ## Run the Application (Phase 4 — Microservices)
 
+### Option A: Docker Compose (Recommended — 5 minutes)
+
 ```bash
-# Start all services locally with Docker Compose
+# Start all 4 services + PostgreSQL + Redis
 docker compose up --build
 
-# Or run individual services:
+# Services available at:
+#   user-service:      http://localhost:8081/api/v1/users
+#   customer-service:  http://localhost:8082/api/v1/customers
+#   billing-service:   http://localhost:8083/api/v1/categories
+#   reporting-service: http://localhost:8084/api/v1/reports
+
+# Health checks:
+curl http://localhost:8081/actuator/health
+curl http://localhost:8082/actuator/health
+curl http://localhost:8083/actuator/health
+curl http://localhost:8084/actuator/health
+
+# Stop all services
+docker compose down
+```
+
+### Option B: Individual Services (requires PostgreSQL running)
+
+```bash
+# Start PostgreSQL first
+docker run -d --name postgres -p 5432:5432 \
+  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
+  postgres:16-alpine
+
+# Create databases
+docker exec postgres psql -U postgres -c "CREATE DATABASE userdb;"
+docker exec postgres psql -U postgres -c "CREATE DATABASE customerdb;"
+docker exec postgres psql -U postgres -c "CREATE DATABASE billingdb;"
+docker exec postgres psql -U postgres -c "CREATE DATABASE reportingdb;"
+
+# Run individual services:
 ./gradlew :services:user-service:bootRun
 ./gradlew :services:customer-service:bootRun
 ./gradlew :services:billing-service:bootRun
 ./gradlew :services:reporting-service:bootRun
 ```
 
+### Verify APIs
+
+```bash
+# List users (empty initially)
+curl -s http://localhost:8081/api/v1/users | jq .
+
+# Create a user
+curl -s -X POST http://localhost:8081/api/v1/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"jdoe","firstName":"John","lastName":"Doe","password":"Password1"}' | jq .
+
+# Create a customer
+curl -s -X POST http://localhost:8082/api/v1/customers \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Acme Corporation"}' | jq .
+
+# Create a billing category
+curl -s -X POST http://localhost:8083/api/v1/categories \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Development","hourlyRate":150.00}' | jq .
+```
+
+### Seed Data (Optional)
+
+```bash
+# Run the data migration script to seed sample data
+./scripts/migrate-data.sh localhost 5432 postgres
+```
+
 ## Project Structure
 
 ```
-├── specs/                          # Speckit specifications
-│   └── 001-modernise-monolith/     # This feature
-├── src/                            # Monolith source (Phases 0-3)
-│   ├── main/java/                  # Application code
-│   ├── main/resources/db/migration # Flyway migrations
-│   └── test/java/                  # Test code
-├── services/                       # Microservices (Phase 4)
-│   ├── user-service/
-│   ├── customer-service/
-│   ├── billing-service/
-│   └── reporting-service/
-├── infra/                          # Azure Bicep IaC (Phase 4)
-├── build.gradle                    # Root build file
-└── settings.gradle                 # Multi-module settings
+├── services/                           # Spring Boot microservices
+│   ├── user-service/                   # User Management (port 8081)
+│   ├── customer-service/               # Customer Management (port 8082)
+│   ├── billing-service/                # Billing & Time Tracking (port 8083)
+│   ├── reporting-service/              # Reporting CQRS (port 8084)
+│   └── shared/
+│       ├── common-dto/                 # ApiResponse, PaginatedResponse
+│       └── common-test/               # TestDataFactory
+├── src/                                # Legacy monolith (Open Liberty)
+│   ├── main/java/                      # Application code
+│   ├── main/resources/db/migration     # Flyway migrations
+│   └── test/java/                      # Test code (85%+ coverage)
+├── infra/                              # Azure Bicep IaC
+│   ├── main.bicep                      # Orchestrator
+│   ├── modules/                        # ACA, PostgreSQL, Key Vault, Redis, monitoring
+│   └── parameters/                     # dev, staging, prod
+├── tests/load/                         # k6 load test scripts
+├── docs/runbooks/                      # Per-service operational runbooks
+├── scripts/                            # Data migration scripts
+├── docker-compose.yml                  # Local dev environment
+├── build.gradle                        # Root build file (Spring Boot BOM)
+└── settings.gradle                     # Multi-module settings
 ```
 
 ## Key Commands Reference
 
 | Action | Command |
 |--------|---------|
-| Build | `./gradlew clean build` |
-| Test | `./gradlew test` |
-| Coverage | `./gradlew test jacocoTestReport` |
-| Liberty dev mode | `./gradlew libertyDev` |
-| Stop Liberty | `./gradlew libertyStop` |
+| Build all | `./gradlew clean build` |
+| Test all | `./gradlew test` |
+| Coverage report | `./gradlew test jacocoTestReport` |
+| Coverage gate | `./gradlew jacocoTestCoverageVerification` |
 | Compile only | `./gradlew compileJava` |
+| Docker Compose up | `docker compose up --build` |
+| Docker Compose down | `docker compose down` |
+| User service test | `./gradlew :services:user-service:test` |
+| Customer service test | `./gradlew :services:customer-service:test` |
+| Billing service test | `./gradlew :services:billing-service:test` |
+| Reporting service test | `./gradlew :services:reporting-service:test` |
+| Liberty dev mode | `./gradlew libertyDev` (legacy monolith) |
+| Stop Liberty | `./gradlew libertyStop` |
 
 ## Development Workflow
 

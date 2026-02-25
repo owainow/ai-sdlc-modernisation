@@ -1,0 +1,10 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api 'org.testcontainers:postgresql:1.20.4'
+    api 'org.testcontainers:junit-jupiter:1.20.4'
+    api "org.junit.jupiter:junit-jupiter-api:${rootProject.ext.junitVersion}"
+    api "org.assertj:assertj-core:${rootProject.ext.assertjVersion}"
+}

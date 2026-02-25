@@ -1,1 +1,9 @@
 rootProject.name = "big-bad-monolith"
+
+// Phase 8: Microservices modules
+include 'services:shared:common-dto'
+include 'services:shared:common-test'
+include 'services:user-service'
+include 'services:customer-service'
+include 'services:billing-service'
+include 'services:reporting-service'
