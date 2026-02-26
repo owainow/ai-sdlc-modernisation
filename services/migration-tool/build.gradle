@@ -10,8 +10,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 
     // Derby driver (source database)
-    implementation 'org.apache.derby:derby:10.15.2.0'
-    implementation 'org.apache.derby:derbytools:10.15.2.0'
+    implementation 'org.apache.derby:derby:10.17.1.0'
+    implementation 'org.apache.derby:derbytools:10.17.1.0'
 
     // PostgreSQL driver (target database)
     runtimeOnly 'org.postgresql:postgresql'
