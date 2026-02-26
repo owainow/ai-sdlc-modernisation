@@ -24,6 +24,7 @@ public class BillableHour {
     @Column(nullable = false, precision = 5, scale = 2)
     private BigDecimal hours;
 
+    // Immutable once set: captures the category's hourly rate at time of creation
     @Column(name = "rate_snapshot", nullable = false, precision = 10, scale = 2, updatable = false)
     private BigDecimal rateSnapshot;
 

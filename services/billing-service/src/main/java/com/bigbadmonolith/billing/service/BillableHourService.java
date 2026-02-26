@@ -78,7 +78,7 @@ public class BillableHourService {
 
         entry.setCustomerId(request.customerId());
         entry.setUserId(request.userId());
-        entry.setCategoryId(request.categoryId());
+        // categoryId is not changed on update; rateSnapshot is immutable
         entry.setHours(request.hours());
         entry.setDateLogged(request.dateLogged());
         entry.setNote(request.note());

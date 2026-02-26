@@ -104,10 +104,7 @@ class BillableHourServiceTest {
 
     @Test
     void create_shouldWarnOnWeekend() {
-        LocalDate saturday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY));
-        if (saturday.isAfter(LocalDate.now())) {
-            saturday = saturday.minusWeeks(1);
-        }
+        LocalDate saturday = LocalDate.now().with(TemporalAdjusters.previous(DayOfWeek.SATURDAY));
         var request = new CreateBillableHourRequest(customerId, userId, categoryId, new BigDecimal("4.00"), saturday, null);
 
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(testCategory));
