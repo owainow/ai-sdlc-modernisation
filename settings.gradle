@@ -12,3 +12,6 @@ include 'services:user-service'
 include 'services:customer-service'
 include 'services:billing-service'
 include 'services:reporting-service'
+
+// Tools
+include 'services:migration-tool'
