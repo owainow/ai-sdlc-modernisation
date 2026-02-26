@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: migration-tool
+
+# Source Derby database (legacy)
+migration:
+  source:
+    url: ${DERBY_URL:jdbc:derby:./data/bigbadmonolith;create=false}
+    username: ${DERBY_USER:app}
+    password: ${DERBY_PASSWORD:app}
+  # Target PostgreSQL databases
+  target:
+    user-service:
+      url: ${PG_USER_URL:jdbc:postgresql://localhost:5432/postgres?currentSchema=user_svc}
+      username: ${PG_USER:postgres}
+      password: ${PG_PASSWORD:postgres}
+    customer-service:
+      url: ${PG_CUSTOMER_URL:jdbc:postgresql://localhost:5432/postgres?currentSchema=customer_svc}
+      username: ${PG_USER:postgres}
+      password: ${PG_PASSWORD:postgres}
+    billing-service:
+      url: ${PG_BILLING_URL:jdbc:postgresql://localhost:5432/postgres?currentSchema=billing_svc}
+      username: ${PG_USER:postgres}
+      password: ${PG_PASSWORD:postgres}
+    reporting-service:
+      url: ${PG_REPORTING_URL:jdbc:postgresql://localhost:5432/postgres?currentSchema=reporting_svc}
+      username: ${PG_USER:postgres}
+      password: ${PG_PASSWORD:postgres}
