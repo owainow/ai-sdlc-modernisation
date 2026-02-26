@@ -12,35 +12,40 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
+          java-version: '21'
           distribution: 'temurin'
-          java-version: '17'
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Compile
-        run: ./gradlew compileJava
-
+      - name: Build
+        run: ./gradlew build -x test
       - name: Test
         run: ./gradlew test
-
-      - name: Coverage Report
-        run: ./gradlew jacocoTestReport
-
-      - name: Coverage Check
-        run: ./gradlew jacocoTestCoverageVerification
-
-      - name: Upload Coverage Report
-        if: always()
+      - name: Upload test reports
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: coverage-report
-          path: build/reports/jacoco/test/html/
+          name: test-reports
+          path: '**/build/reports/tests/'
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build

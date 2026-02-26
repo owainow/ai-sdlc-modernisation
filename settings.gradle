@@ -1,1 +1,14 @@
-rootProject.name = "big-bad-monolith"
+rootProject.name = 'big-bad-monolith-rebuild'
+
+// Legacy monolith (existing)
+// include 'legacy' // the src/ directory is the legacy code, handled by the old build
+
+// Shared libraries
+include 'libs:common-dto'
+include 'libs:test-utils'
+
+// Microservices
+include 'services:user-service'
+include 'services:customer-service'
+include 'services:billing-service'
+include 'services:reporting-service'
