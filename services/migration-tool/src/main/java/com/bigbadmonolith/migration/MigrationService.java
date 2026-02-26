@@ -5,9 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -67,10 +66,12 @@ public class MigrationService {
     int migrateUsers(Connection derby, Connection pgUser, Connection pgReporting) throws SQLException {
         int count = 0;
         String selectSql = "SELECT id, email, name FROM users ORDER BY id";
-        String upsertUserSql = "MERGE INTO users (id, name, email, created_at, updated_at) " +
-                "KEY (id) VALUES (?, ?, ?, NOW(), NOW())";
-        String upsertReportSql = "MERGE INTO report_users (id, name, email) " +
-                "KEY (id) VALUES (?, ?, ?)";
+        String upsertUserSql = upsertSql(pgUser,
+                "INSERT INTO users (id, name, email, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW()) ON CONFLICT (id) DO NOTHING",
+                "MERGE INTO users (id, name, email, created_at, updated_at) KEY (id) VALUES (?, ?, ?, NOW(), NOW())");
+        String upsertReportSql = upsertSql(pgReporting,
+                "INSERT INTO report_users (id, name, email) VALUES (?, ?, ?) ON CONFLICT (id) DO NOTHING",
+                "MERGE INTO report_users (id, name, email) KEY (id) VALUES (?, ?, ?)");
 
         try (Statement stmt = derby.createStatement();
              ResultSet rs = stmt.executeQuery(selectSql);
@@ -104,14 +105,16 @@ public class MigrationService {
     int migrateCustomers(Connection derby, Connection pgCustomer, Connection pgReporting) throws SQLException {
         int count = 0;
         String selectSql = "SELECT id, name, email, address, created_at FROM customers ORDER BY id";
-        String upsertSql = "MERGE INTO customers (id, name, email, address, created_at, updated_at) " +
-                "KEY (id) VALUES (?, ?, ?, ?, ?, NOW())";
-        String upsertReportSql = "MERGE INTO report_customers (id, name, email, address) " +
-                "KEY (id) VALUES (?, ?, ?, ?)";
+        String upsertCustSql = upsertSql(pgCustomer,
+                "INSERT INTO customers (id, name, email, address, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW()) ON CONFLICT (id) DO NOTHING",
+                "MERGE INTO customers (id, name, email, address, created_at, updated_at) KEY (id) VALUES (?, ?, ?, ?, ?, NOW())");
+        String upsertReportSql = upsertSql(pgReporting,
+                "INSERT INTO report_customers (id, name, email, address) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO NOTHING",
+                "MERGE INTO report_customers (id, name, email, address) KEY (id) VALUES (?, ?, ?, ?)");
 
         try (Statement stmt = derby.createStatement();
              ResultSet rs = stmt.executeQuery(selectSql);
-             PreparedStatement pgStmt = pgCustomer.prepareStatement(upsertSql);
+             PreparedStatement pgStmt = pgCustomer.prepareStatement(upsertCustSql);
              PreparedStatement reportStmt = pgReporting.prepareStatement(upsertReportSql)) {
 
             while (rs.next()) {
@@ -146,14 +149,16 @@ public class MigrationService {
     int migrateBillingCategories(Connection derby, Connection pgBilling, Connection pgReporting) throws SQLException {
         int count = 0;
         String selectSql = "SELECT id, name, description, hourly_rate FROM billing_categories ORDER BY id";
-        String upsertSql = "MERGE INTO billing_categories (id, name, description, hourly_rate, created_at, updated_at) " +
-                "KEY (id) VALUES (?, ?, ?, ?, NOW(), NOW())";
-        String upsertReportSql = "MERGE INTO report_billing_categories (id, name, hourly_rate) " +
-                "KEY (id) VALUES (?, ?, ?)";
+        String upsertCatSql = upsertSql(pgBilling,
+                "INSERT INTO billing_categories (id, name, description, hourly_rate, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW()) ON CONFLICT (id) DO NOTHING",
+                "MERGE INTO billing_categories (id, name, description, hourly_rate, created_at, updated_at) KEY (id) VALUES (?, ?, ?, ?, NOW(), NOW())");
+        String upsertReportSql = upsertSql(pgReporting,
+                "INSERT INTO report_billing_categories (id, name, hourly_rate) VALUES (?, ?, ?) ON CONFLICT (id) DO NOTHING",
+                "MERGE INTO report_billing_categories (id, name, hourly_rate) KEY (id) VALUES (?, ?, ?)");
 
         try (Statement stmt = derby.createStatement();
              ResultSet rs = stmt.executeQuery(selectSql);
-             PreparedStatement pgStmt = pgBilling.prepareStatement(upsertSql);
+             PreparedStatement pgStmt = pgBilling.prepareStatement(upsertCatSql);
              PreparedStatement reportStmt = pgReporting.prepareStatement(upsertReportSql)) {
 
             while (rs.next()) {
@@ -196,16 +201,16 @@ public class MigrationService {
 
         String selectSql = "SELECT id, customer_id, user_id, category_id, hours, note, date_logged, created_at " +
                 "FROM billable_hours ORDER BY id";
-        String upsertSql = "MERGE INTO billable_hours (id, customer_id, user_id, category_id, hours, " +
-                "rate_snapshot, date_logged, note, created_at, updated_at) " +
-                "KEY (id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
-        String upsertReportSql = "MERGE INTO report_billable_hours (id, customer_id, user_id, category_id, " +
-                "hours, rate_snapshot, date_logged, note, created_at) " +
-                "KEY (id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String upsertHourSql = upsertSql(pgBilling,
+                "INSERT INTO billable_hours (id, customer_id, user_id, category_id, hours, rate_snapshot, date_logged, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) ON CONFLICT (id) DO NOTHING",
+                "MERGE INTO billable_hours (id, customer_id, user_id, category_id, hours, rate_snapshot, date_logged, note, created_at, updated_at) KEY (id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+        String upsertReportSql = upsertSql(pgReporting,
+                "INSERT INTO report_billable_hours (id, customer_id, user_id, category_id, hours, rate_snapshot, date_logged, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING",
+                "MERGE INTO report_billable_hours (id, customer_id, user_id, category_id, hours, rate_snapshot, date_logged, note, created_at) KEY (id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         try (Statement stmt = derby.createStatement();
              ResultSet rs = stmt.executeQuery(selectSql);
-             PreparedStatement pgStmt = pgBilling.prepareStatement(upsertSql);
+             PreparedStatement pgStmt = pgBilling.prepareStatement(upsertHourSql);
              PreparedStatement reportStmt = pgReporting.prepareStatement(upsertReportSql)) {
 
             while (rs.next()) {
@@ -265,7 +270,16 @@ public class MigrationService {
      * Ensures idempotent migrations — same input always produces same UUID.
      */
     UUID generateDeterministicUuid(String entityType, long legacyId) {
-        return UUID.nameUUIDFromBytes((entityType + ":" + legacyId).getBytes());
+        return UUID.nameUUIDFromBytes((entityType + ":" + legacyId).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Selects SQL dialect based on the target connection type.
+     * Uses PostgreSQL ON CONFLICT syntax for PostgreSQL, MERGE INTO for H2 (tests).
+     */
+    private static String upsertSql(Connection conn, String pgSql, String h2Sql) throws SQLException {
+        String dbProduct = conn.getMetaData().getDatabaseProductName();
+        return dbProduct.contains("H2") ? h2Sql : pgSql;
     }
 
     /**
